@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice {{invoice_no}}</title>
+  <style>{{styles}}</style>
+</head>
+<body>
+  <div class="invoice-container">
+
+    <!-- Header -->
+    <div class="invoice-header">
+      <div class="company-info">
+        <h1>APPLUS+ VELOSI</h1>
+        <p>{{company_address}}</p>
+        <p>{{company_contact}}</p>
+      </div>
+      <div class="invoice-title">
+        <h2>Invoice</h2>
+        <div class="invoice-number">{{invoice_no}}</div>
+        <div class="invoice-number">Date: {{invoice_date}}</div>
+      </div>
+    </div>
+
+    <!-- Client & Project Info -->
+    <div class="info-grid">
+      <div class="info-block">
+        <h3>Bill To</h3>
+        <div class="info-row"><span class="label">Client</span><span class="value">{{client_name}}</span></div>
+        <div class="info-row"><span class="label">Contract</span><span class="value">{{contract_no}}</span></div>
+        <div class="info-row"><span class="label">PO No.</span><span class="value">{{po_no}}</span></div>
+      </div>
+      <div class="info-block">
+        <h3>Invoice Details</h3>
+        <div class="info-row"><span class="label">Project</span><span class="value">{{project_name}}</span></div>
+        <div class="info-row"><span class="label">ITP Code</span><span class="value">{{itp_code}}</span></div>
+        <div class="info-row"><span class="label">SAP Sales Order</span><span class="value">{{sap_sales_order}}</span></div>
+        <div class="info-row"><span class="label">Status</span><span class="value">{{payment_status}}</span></div>
+      </div>
+    </div>
+
+    <!-- Inspection Detail -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Report No</th>
+          <th>Inspector</th>
+          <th>Location</th>
+          <th>Period</th>
+          <th>Duration</th>
+          <th style="text-align:right">Amount ({{currency}})</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{report_no}}</td>
+          <td>{{inspector_name}}</td>
+          <td>{{vendor_location}}</td>
+          <td>{{inspection_start}} — {{inspection_end}}</td>
+          <td>{{work_duration}} {{duration_tag}}</td>
+          <td>{{total_amount}}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals-section">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">Subtotal</span>
+          <span class="value">{{currency}} {{total_amount}}</span>
+        </div>
+        <div class="totals-row">
+          <span class="label">Credit Memo</span>
+          <span class="value">{{currency}} {{credit_memo_amount}}</span>
+        </div>
+        <div class="totals-row grand-total">
+          <span class="label">Total Due</span>
+          <span class="value">{{currency}} {{total_amount}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-block" style="margin-top: 20px;">
+       <h3>Payment Instructions</h3>
+       <p style="font-size: 10px; color: #333;">{{bank_details}}</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="invoice-footer">
+      <div class="signature-block">
+        <div>
+          <div class="sig-line">Prepared By</div>
+        </div>
+        <div>
+          <div class="sig-line">Approved By</div>
+        </div>
+      </div>
+      <div class="terms">
+        Payment is due within 30 days. Please reference Invoice No. {{invoice_no}} in all correspondence.
+        Generated on {{today_date}}.
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

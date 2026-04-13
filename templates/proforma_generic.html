@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Proforma {{proforma_inv_no}}</title>
+  <style>{{styles}}</style>
+</head>
+<body>
+  <div class="invoice-container">
+
+    <div class="invoice-header">
+      <div class="company-info">
+        <h1>APPLUS+ VELOSI</h1>
+        <p>Inspection &amp; Verification Services</p>
+        <p>P.O. Box 24512, Doha, Qatar</p>
+      </div>
+      <div class="invoice-title">
+        <h2>Proforma Invoice</h2>
+        <div class="invoice-number">{{proforma_inv_no}}</div>
+        <div class="invoice-number">Date: {{proforma_inv_date}}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-block">
+        <h3>Bill To</h3>
+        <div class="info-row"><span class="label">Client</span><span class="value">{{client_name}}</span></div>
+        <div class="info-row"><span class="label">Contract</span><span class="value">{{contract_no}}</span></div>
+        <div class="info-row"><span class="label">PO No.</span><span class="value">{{po_no}}</span></div>
+        <div class="info-row"><span class="label">ITP Code</span><span class="value">{{itp_code}}</span></div>
+      </div>
+      <div class="info-block">
+        <h3>Inspection Details</h3>
+        <div class="info-row"><span class="label">Report No</span><span class="value">{{report_no}}</span></div>
+        <div class="info-row"><span class="label">Inspector</span><span class="value">{{inspector_name}}</span></div>
+        <div class="info-row"><span class="label">Location</span><span class="value">{{vendor_location}}</span></div>
+        <div class="info-row"><span class="label">Period</span><span class="value">{{inspection_start}} — {{inspection_end}}</span></div>
+        <div class="info-row"><span class="label">Work Duration</span><span class="value">{{work_duration}} {{duration_tag}}</span></div>
+      </div>
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Description</th>
+          <th>Qty</th>
+          <th style="text-align:right">Amount ({{currency}})</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Inspection Services — {{project_name}} / {{vendor_location}}</td>
+          <td>{{work_duration}} {{duration_tag}}</td>
+          <td>{{total_amount}}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="totals-section">
+      <div class="totals-box">
+        <div class="totals-row grand-total">
+          <span class="label">Total</span>
+          <span class="value">{{currency}} {{total_amount}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="invoice-footer">
+      <p style="font-size:10px; color:#555; margin-bottom:10px;">
+        This is a Proforma Invoice for review purposes. A commercial invoice will be issued upon SES approval.
+      </p>
+      <div class="signature-block">
+        <div><div class="sig-line">Prepared By</div></div>
+        <div><div class="sig-line">Reviewed By</div></div>
+      </div>
+      <div class="terms">Generated on {{today_date}}.</div>
+    </div>
+
+  </div>
+</body>
+</html>

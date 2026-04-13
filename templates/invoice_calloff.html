@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice {{invoice_no}} — Call-Off</title>
+  <style>{{styles}}</style>
+  <style>
+    .travel-section { margin-top: 15px; }
+    .travel-section h3 { font-size: 10px; font-weight: 700; color: #003366; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+
+    <div class="invoice-header">
+      <div class="company-info">
+        <h1>APPLUS+ VELOSI</h1>
+        <p>{{company_address}}</p>
+        <p>{{company_contact}}</p>
+      </div>
+      <div class="invoice-title">
+        <h2>Call-Off Invoice</h2>
+        <div class="invoice-number">{{invoice_no}}</div>
+        <div class="invoice-number">Date: {{invoice_date}}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-block">
+        <h3>Client</h3>
+        <div class="info-row"><span class="label">Name</span><span class="value">{{client_name}}</span></div>
+        <div class="info-row"><span class="label">Contract</span><span class="value">{{contract_no}}</span></div>
+        <div class="info-row"><span class="label">PO No.</span><span class="value">{{po_no}}</span></div>
+        <div class="info-row"><span class="label">Coordinator</span><span class="value">{{coordinator_name}}</span></div>
+      </div>
+      <div class="info-block">
+        <h3>Inspection</h3>
+        <div class="info-row"><span class="label">Report No</span><span class="value">{{report_no}}</span></div>
+        <div class="info-row"><span class="label">Inspector</span><span class="value">{{inspector_name}}</span></div>
+        <div class="info-row"><span class="label">Location</span><span class="value">{{vendor_location}}</span></div>
+        <div class="info-row"><span class="label">Period</span><span class="value">{{inspection_start}} — {{inspection_end}}</span></div>
+      </div>
+    </div>
+
+    <!-- Work Duration -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Duration</th>
+          <th>Unit</th>
+          <th style="text-align:right">Amount ({{currency}})</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Regular Work Duration</td>
+          <td>{{work_duration}}</td>
+          <td>{{duration_tag}}</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Overtime Duration</td>
+          <td>{{ot_duration}}</td>
+          <td>{{duration_tag}}</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Travel & Expenses -->
+    <div class="travel-section">
+      <h3>Travel &amp; Expenses</h3>
+    </div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Details</th>
+          <th style="text-align:right">Amount ({{currency}})</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Travel Routing</td>
+          <td>{{travel_routing}}</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Mileage</td>
+          <td>{{mileage}} km</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Accommodation / Expenses</td>
+          <td>—</td>
+          <td>{{expenses_amount}}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="totals-section">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">Invoice Amount</span>
+          <span class="value">{{currency}} {{total_amount}}</span>
+        </div>
+        <div class="totals-row">
+          <span class="label">Credit Memo ({{credit_memo_no}})</span>
+          <span class="value">{{currency}} {{credit_memo_amount}}</span>
+        </div>
+        <div class="totals-row grand-total">
+          <span class="label">Total Due</span>
+          <span class="value">{{currency}} {{total_amount}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SES Info -->
+    <div class="info-block" style="margin-bottom: 20px;">
+      <h3>Service Entry Sheet</h3>
+      <div class="info-row"><span class="label">SES No.</span><span class="value">{{ses_no}}</span></div>
+      <div class="info-row"><span class="label">SES Date</span><span class="value">{{ses_date}}</span></div>
+      <div class="info-row"><span class="label">SES Value</span><span class="value">{{currency}} {{ses_value}}</span></div>
+      <div class="info-row"><span class="label">SAP Work Order</span><span class="value">{{sap_work_order}}</span></div>
+    </div>
+
+    <div class="info-block" style="margin-bottom: 20px;">
+       <h3>Payment Instructions</h3>
+       <p style="font-size: 10px; color: #333;">{{bank_details}}</p>
+    </div>
+
+    <div class="invoice-footer">
+      <div class="signature-block">
+        <div><div class="sig-line">Prepared By</div></div>
+        <div><div class="sig-line">Approved By</div></div>
+      </div>
+      <div class="terms">
+        Payment is due within 30 days. Reference Invoice No. {{invoice_no}}. Generated on {{today_date}}.
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

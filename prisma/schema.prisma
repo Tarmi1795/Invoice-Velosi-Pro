@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model workflow_presets {
+  id                    String    @id @default(uuid())
+  preset_name           String?
+  description           String?
+  visible_fields        String?   // JSON array of field keys shown in forms
+  workflow_steps        String?   // JSON array of steps e.g. ["Proforma","SES","Invoice"]
+  default_values        String?   // JSON object of defaults e.g. {"currency":"USD","duration_tag":"Days"}
+  invoice_template      String?   // template filename e.g. "invoice_qp.html"
+  company_address       String?   // Office address on the invoice
+  company_contact       String?   // Email/Phone on the invoice
+  bank_details          String?   // Bank payment instructions
+  created_at            DateTime? @default(now())
+  updated_at            DateTime? @default(now())
+  clients_and_contracts clients_and_contracts[]
+}
+
+model clients_and_contracts {
+  id                      String    @id @default(uuid())
+  client_name             String?
+  contract_no             String?
+  currency                String?   @default("QAR")
+  original_contract_value Float?
+  running_balance         Float?
+  description             String?
+  preset_id               String?
+  created_at              DateTime? @default(now())
+  updated_at              DateTime? @default(now())
+  workflow_presets         workflow_presets? @relation(fields: [preset_id], references: [id])
+  projects                projects[]
+}
+
+model projects {
+  id                  String               @id @default(uuid())
+  contract_id         String?
+  project_name        String?
+  po_no               String?
+  itp_code            String?
+  focal_name          String?
+  focal_email         String?
+  budget              Float?               @default(0)
+  active_status       Boolean?             @default(true)
+  created_at          DateTime?            @default(now())
+  updated_at          DateTime?            @default(now())
+  clients_and_contracts clients_and_contracts? @relation(fields: [contract_id], references: [id])
+  inspections_summary inspections_summary[]
+}
+
+model inspectors {
+  id                  String               @id @default(uuid())
+  full_name           String?
+  job_title           String?
+  base_location       String?
+  created_at          DateTime?            @default(now())
+  updated_at          DateTime?            @default(now())
+  inspections_summary inspections_summary[]
+}
+
+model inspections_summary {
+  id                    String                   @id @default(uuid())
+  project_id            String?
+  inspector_id          String?
+  coordinator_name      String?
+  vendor_location       String?
+  inspection_start_date DateTime?
+  inspection_end_date   DateTime?
+  report_no             String?
+  work_duration         Float?
+  ot_duration           Float?
+  duration_tag          String?                  @default("Hrs.")
+  travel_routing        String?
+  mileage               Float?
+  expenses_amount       Float?
+  ts_filename           String?
+  ts_file_verified      Boolean?                 @default(false)
+  created_at            DateTime?                @default(now())
+  updated_at            DateTime?                @default(now())
+  inspectors            inspectors?              @relation(fields: [inspector_id], references: [id])
+  projects              projects?                @relation(fields: [project_id], references: [id])
+  proformas_and_invoices proformas_and_invoices[]
+}
+
+model proformas_and_invoices {
+  id                    String               @id @default(uuid())
+  inspection_id         String?
+  proforma_inv_no       String?
+  proforma_inv_date     DateTime?
+  sap_sales_order       String?
+  invoice_no            String?
+  invoice_date          DateTime?
+  conso_invoice_no      String?
+  conso_filename        String?
+  total_amount          Float?
+  credit_memo_no        String?
+  credit_memo_amount    Float?
+  payment_status        String?              @default("Pending")
+  created_at            DateTime?            @default(now())
+  updated_at            DateTime?            @default(now())
+  inspections_summary   inspections_summary? @relation(fields: [inspection_id], references: [id])
+  ses_records           ses_records[]
+}
+
+model ses_records {
+  id                    String                  @id @default(uuid())
+  proforma_inv_id       String?
+  ses_no                String?
+  ses_date              DateTime?
+  ses_value             Float?
+  sap_work_order        String?
+  status                String?                 @default("Pending")
+  created_at            DateTime?               @default(now())
+  updated_at            DateTime?               @default(now())
+  proformas_and_invoices proformas_and_invoices? @relation(fields: [proforma_inv_id], references: [id])
+}
