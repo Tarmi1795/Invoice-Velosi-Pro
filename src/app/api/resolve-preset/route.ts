@@ -5,9 +5,9 @@ import { prisma } from "@/lib/db";
 // Given a project_id, resolve the contract → preset chain and return the config
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get("project_id");
-    const contractId = searchParams.get("contract_id");
+    const { searchParams: resParams } = new URL(request.url);
+    const projectId = resParams.get("project_id");
+    const contractId = resParams.get("contract_id");
 
     let presetData = null;
 
@@ -16,7 +16,11 @@ export async function GET(request: Request) {
         where: { id: projectId },
         include: {
           clients_and_contracts: {
-            include: { workflow_presets: true }
+            include: { 
+              workflow_presets: {
+                include: { company_profile: true }
+              } 
+            }
           }
         }
       });
@@ -24,7 +28,11 @@ export async function GET(request: Request) {
     } else if (contractId) {
       const contract = await prisma.clients_and_contracts.findUnique({
         where: { id: contractId },
-        include: { workflow_presets: true }
+        include: { 
+          workflow_presets: {
+            include: { company_profile: true }
+          }
+        }
       });
       presetData = contract?.workflow_presets;
     }
@@ -42,9 +50,11 @@ export async function GET(request: Request) {
         workflow_steps: JSON.parse(presetData.workflow_steps || "[]"),
         default_values: JSON.parse(presetData.default_values || "{}"),
         invoice_template: presetData.invoice_template,
-        company_address: presetData.company_address,
-        company_contact: presetData.company_contact,
-        bank_details: presetData.bank_details,
+        // Map from joined company profile
+        company_address: presetData.company_profile?.address,
+        company_contact: presetData.company_profile?.contact,
+        bank_details: presetData.company_profile?.bank_details,
+        logo_path: presetData.company_profile?.logo_path,
       },
       showAll: false
     });

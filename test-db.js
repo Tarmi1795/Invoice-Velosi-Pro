@@ -1,36 +1,18 @@
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const p = new PrismaClient();
 
 async function main() {
-  console.log('Inserting sample data...');
-  const client = await prisma.clients_and_contracts.create({
-    data: {
-      client_name: 'Test Client',
-      contract_no: 'C-001',
-      original_contract_value: 100000,
-      currency: 'QAR'
-    }
-  });
-
-  const project = await prisma.projects.create({
-    data: {
-      project_name: 'Test Project',
-      contract_id: client.id,
-      po_no: 'PO-123'
-    }
-  });
-
-  const inspector = await prisma.inspectors.create({
-    data: {
-      full_name: 'John Doe',
-      job_title: 'Surveyor'
-    }
-  });
-
-  console.log('Success! Created IDs:', { client: client.id, project: project.id, inspector: inspector.inspector_id });
+  console.log('=== INVOICES DIRECT FROM DB ===');
+  const invoices = await p.proformas_and_invoices.findMany();
+  console.log(JSON.stringify(invoices, null, 2));
+  
+  console.log('\n=== API RESPONSE TEST ===');
+  const response = await fetch('http://localhost:3004/api/invoices');
+  const data = await response.json();
+  console.log('API returned:', Array.isArray(data) ? data.length : 'error', 'items');
+  console.log(JSON.stringify(data, null, 2));
+  
+  await p.$disconnect();
 }
 
-main().catch(e => {
-  console.error('FAILED TO INSERT:', e);
-  process.exit(1);
-});
+main().catch(console.error);

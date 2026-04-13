@@ -161,8 +161,18 @@ export default function InspectionPage() {
 
   const columns = [
     { key: "report_no", label: "REPORT NO" },
+    { key: "coordinator_name", label: "COORDINATOR" },
+    { key: "vendor_location", label: "LOCATION" },
     { key: "inspection_start_date", label: "START DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
-    { key: "vendor_location", label: "VENDOR LOCATION" },
+    { key: "inspection_end_date", label: "END DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "work_duration", label: "DURATION", render: (val: any, row: any) => val ? `${val} ${row.duration_tag || 'Hrs.'}` : '—' },
+    { key: "ot_duration", label: "OT", render: (val: any) => val ? String(val) : '—' },
+    { key: "travel_routing", label: "TRAVEL" },
+    { key: "mileage", label: "MILEAGE", render: (val: any) => val ? Number(val).toLocaleString() : '—' },
+    { key: "expenses_amount", label: "EXPENSES", render: (val: any) => val ? Number(val).toLocaleString() : '—' },
+    { key: "ts_filename", label: "TIMESHEET" },
+    { key: "ts_file_verified", label: "VERIFIED", render: (val: any) => val ? '✓' : '✗' },
+    { key: "created_at", label: "CREATED", render: (val: any) => val ? new Date(val).toLocaleDateString() : '—' },
     {
       key: "actions",
       label: "Actions",

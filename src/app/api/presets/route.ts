@@ -22,9 +22,7 @@ export async function POST(request: Request) {
         workflow_steps: body.workflow_steps,
         default_values: body.default_values,
         invoice_template: body.invoice_template,
-        company_address: body.company_address,
-        company_contact: body.company_contact,
-        bank_details: body.bank_details,
+        company_profile_id: body.company_profile_id,
       }
     });
     return NextResponse.json(newPreset, { status: 201 });

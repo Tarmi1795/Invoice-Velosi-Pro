@@ -4,20 +4,26 @@
   <meta charset="utf-8">
   <title>Invoice {{invoice_no}}</title>
   <style>{{styles}}</style>
+  <style>
+    .val-logo { height: 120px; object-fit: contain; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
   <div class="invoice-container">
 
     <!-- Header -->
     <div class="invoice-header">
-      <div class="company-info">
-        <h1>APPLUS+ VELOSI</h1>
+      <div class="header-left">
+        <img src="{{logo_url}}" class="val-logo" alt="Logo" />
+        <h1>{{company_name}}</h1>
         <p>{{company_address}}</p>
         <p>{{company_contact}}</p>
       </div>
-      <div class="invoice-title">
+      <div class="header-center">
         <h2>Invoice</h2>
-        <div class="invoice-number">{{invoice_no}}</div>
+      </div>
+      <div class="header-right">
+        <div class="invoice-number">No: {{invoice_no}}</div>
         <div class="invoice-number">Date: {{invoice_date}}</div>
       </div>
     </div>

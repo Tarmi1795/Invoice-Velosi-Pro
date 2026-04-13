@@ -4,30 +4,28 @@ import { prisma } from "@/lib/db";
 import fs from "fs";
 import path from "path";
 
-function formatDate(d: any): string {
+const formatDate = (d: any): string => {
   if (!d) return "—";
   try { return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }); }
   catch { return String(d); }
-}
+};
 
-function formatNumber(n: any): string {
+const formatNumber = (n: any): string => {
   if (n === null || n === undefined) return "0.00";
   return Number(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+};
 
-export async function GET(request: Request) {
+export const GET = async (req: Request) => {
   try {
-    const { searchParams } = new URL(request.url);
-    const invoiceId = searchParams.get("invoice_id");
-    const templateOverride = searchParams.get("template");
+    const url = new URL(req.url);
+    const invId = url.searchParams.get("invoice_id");
+    const tplOverride = url.searchParams.get("template");
+    const isPrint = url.searchParams.get("print") === "1";
 
-    if (!invoiceId) {
-      return NextResponse.json({ error: "invoice_id is required" }, { status: 400 });
-    }
+    if (!invId) return NextResponse.json({ error: "invoice_id is required" }, { status: 400 });
 
-    // 1. Fetch the full data chain
     const invoice = await prisma.proformas_and_invoices.findUnique({
-      where: { id: invoiceId },
+      where: { id: invId },
       include: {
         inspections_summary: {
           include: {
@@ -35,70 +33,63 @@ export async function GET(request: Request) {
             projects: {
               include: {
                 clients_and_contracts: {
-                  include: { workflow_presets: true }
+                  include: { 
+                    workflow_presets: {
+                      include: { company_profile: true }
+                    } 
+                  }
                 }
               }
             }
           }
         },
-        ses_records: {
-          orderBy: { created_at: "desc" },
-          take: 1,
-        }
+        ses_records: { orderBy: { created_at: "desc" }, take: 1 }
       }
     });
 
-    if (!invoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-    }
+    if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
-    const inspection = invoice.inspections_summary;
-    const inspector = inspection?.inspectors;
-    const project = inspection?.projects;
-    const client = project?.clients_and_contracts;
+    const insp = invoice.inspections_summary;
+    const client = insp?.projects?.clients_and_contracts;
     const preset = client?.workflow_presets;
-    const ses = invoice.ses_records?.[0];
+    let company = preset?.company_profile;
 
-    // 2. Determine which template to use
-    const templateName = templateOverride || preset?.invoice_template || "invoice_standard.html";
-    const templatePath = path.join(process.cwd(), "templates", templateName);
-    const stylesPath = path.join(process.cwd(), "templates", "shared", "styles.css");
-
-    if (!fs.existsSync(templatePath)) {
-      return NextResponse.json({ error: `Template '${templateName}' not found` }, { status: 404 });
+    if (!company) {
+      company = await prisma.company_profiles.findFirst({ orderBy: { created_at: 'asc' } });
     }
 
-    let html = fs.readFileSync(templatePath, "utf-8");
-    const styles = fs.existsSync(stylesPath) ? fs.readFileSync(stylesPath, "utf-8") : "";
+    const ses = invoice.ses_records?.[0];
+    const tplName = tplOverride || preset?.invoice_template || "invoice_standard.html";
+    const tplPath = path.join(process.cwd(), "templates", tplName);
+    const cssPath = path.join(process.cwd(), "templates", "shared", "styles.css");
 
-    // 3. Build the variables object
-    const vars: Record<string, string> = {
-      // Client
+    if (!fs.existsSync(tplPath)) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+
+    let finalHtml = fs.readFileSync(tplPath, "utf-8");
+    const sharedCss = fs.existsSync(cssPath) ? fs.readFileSync(cssPath, "utf-8") : "";
+
+    const map: Record<string, string> = {
       client_name: client?.client_name || "—",
       contract_no: client?.contract_no || "—",
       currency: client?.currency || "QAR",
-      // Project
-      project_name: project?.project_name || "—",
-      po_no: project?.po_no || "—",
-      itp_code: project?.itp_code || "—",
-      // Inspector
-      inspector_name: inspector?.full_name || "—",
-      job_title: inspector?.job_title || "—",
-      base_location: inspector?.base_location || "—",
-      // Inspection
-      report_no: inspection?.report_no || "—",
-      coordinator_name: inspection?.coordinator_name || "—",
-      vendor_location: inspection?.vendor_location || "—",
-      inspection_start: formatDate(inspection?.inspection_start_date),
-      inspection_end: formatDate(inspection?.inspection_end_date),
-      work_duration: String(inspection?.work_duration || 0),
-      ot_duration: String(inspection?.ot_duration || 0),
-      duration_tag: inspection?.duration_tag || "Hrs.",
-      travel_routing: inspection?.travel_routing || "—",
-      mileage: String(inspection?.mileage || 0),
-      expenses_amount: formatNumber(inspection?.expenses_amount),
-      ts_filename: inspection?.ts_filename || "—",
-      // Invoice
+      project_name: insp?.projects?.project_name || "—",
+      po_no: insp?.projects?.po_no || "—",
+      itp_code: insp?.projects?.itp_code || "—",
+      inspector_name: insp?.inspectors?.full_name || "—",
+      job_title: insp?.inspectors?.job_title || "—",
+      base_location: insp?.inspectors?.base_location || "—",
+      report_no: insp?.report_no || "—",
+      coordinator_name: insp?.coordinator_name || "—",
+      vendor_location: insp?.vendor_location || "—",
+      inspection_start: formatDate(insp?.inspection_start_date),
+      inspection_end: formatDate(insp?.inspection_end_date),
+      work_duration: String(insp?.work_duration || 0),
+      ot_duration: String(insp?.ot_duration || 0),
+      duration_tag: insp?.duration_tag || "Hrs.",
+      travel_routing: insp?.travel_routing || "—",
+      mileage: String(insp?.mileage || 0),
+      expenses_amount: formatNumber(insp?.expenses_amount),
+      ts_filename: insp?.ts_filename || "—",
       proforma_inv_no: invoice.proforma_inv_no || "—",
       proforma_inv_date: formatDate(invoice.proforma_inv_date),
       sap_sales_order: invoice.sap_sales_order || "—",
@@ -109,41 +100,29 @@ export async function GET(request: Request) {
       credit_memo_no: invoice.credit_memo_no || "—",
       credit_memo_amount: formatNumber(invoice.credit_memo_amount),
       payment_status: invoice.payment_status || "Pending",
-      // SES
       ses_no: ses?.ses_no || "—",
       ses_date: formatDate(ses?.ses_date),
       ses_value: formatNumber(ses?.ses_value),
       sap_work_order: ses?.sap_work_order || "—",
-      // Meta
       today_date: formatDate(new Date()),
       generated_by: "Invoice Velosi Pro",
-      // Preset Static Info
-      company_address: preset?.company_address || "P.O. Box 24512, Doha, Qatar",
-      company_contact: preset?.company_contact || "info@velosipro.com / +974 4444 0000",
-      bank_details: preset?.bank_details || "Velosi Pro - QNB Account: 0000-0000-0000",
-      // Styles
-      styles: styles,
+      company_name: company?.name || "APPLUS+ VELOSI",
+      company_address: company?.address || "P.O. Box 24512, Doha, Qatar",
+      company_contact: company?.contact || "info@velosipro.com / +974 4444 0000",
+      bank_details: company?.bank_details || "Velosi Pro - QNB Account: 0000-0000-0000",
+      logo_url: company?.logo_path ? `/logos/${path.basename(company.logo_path)}` : "/logos/velosi_logo.png",
+      styles: sharedCss,
     };
 
-    // 4. Replace all {{variable}} placeholders
-    html = html.replace(/\{\{(\w+)\}\}/g, (match, key) => {
-      return vars[key] !== undefined ? vars[key] : match;
-    });
-
-    // 5. Inject Print Button
-    html = html.replace("</body>", `
-      <div class="print-helper no-print" onclick="window.print()">
-        🖨️ Print to PDF
-      </div>
+    finalHtml = finalHtml.replace(/\{\{(\w+)\}\}/g, (m, k) => map[k] !== undefined ? map[k] : m);
+    finalHtml = finalHtml.replace("</body>", `
+      <div class="print-helper no-print" onclick="window.print()">🖨️ Print to PDF</div>
+      ${isPrint ? '<script>window.onload = () => { setTimeout(() => { window.print(); }, 500); }</script>' : ''}
     </body>`);
 
-    // Return rendered HTML
-    return new NextResponse(html, {
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
-
-  } catch (error) {
-    console.error("Generate invoice error:", error);
-    return NextResponse.json({ error: "Failed to generate invoice" }, { status: 500 });
+    return new NextResponse(finalHtml, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-}
+};

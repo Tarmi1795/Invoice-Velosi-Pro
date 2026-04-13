@@ -99,8 +99,13 @@ export default function ProjectPage() {
 
   const columns = [
     { key: "project_name", label: "PROJECT NAME" },
+    { key: "contract_id", label: "CONTRACT ID" },
     { key: "po_no", label: "PO NO" },
+    { key: "itp_code", label: "ITP CODE" },
     { key: "focal_name", label: "FOCAL NAME" },
+    { key: "focal_email", label: "FOCAL EMAIL" },
+    { key: "active_status", label: "STATUS", render: (val: any) => val ? 'Active' : 'Inactive' },
+    { key: "created_at", label: "CREATED", render: (val: any) => val ? new Date(val).toLocaleDateString() : '—' },
     {
       key: "actions",
       label: "Actions",

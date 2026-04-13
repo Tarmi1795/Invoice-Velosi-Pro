@@ -23,6 +23,8 @@ export default function ClientPage() {
     original_contract_value: "",
     running_balance: "",
     description: "",
+    contract_start_date: "",
+    contract_end_date: "",
     preset_id: ""
   };
   const [formData, setFormData] = useState(initialForm);
@@ -83,7 +85,11 @@ export default function ClientPage() {
     setEditingItem(item);
     const fd: any = {};
     Object.keys(initialForm).forEach(k => {
-      fd[k] = item[k] !== null && item[k] !== undefined ? item[k] : "";
+      if (k.includes('date') && item[k]) {
+        fd[k] = new Date(item[k]).toISOString().split('T')[0];
+      } else {
+        fd[k] = item[k] !== null && item[k] !== undefined ? item[k] : "";
+      }
     });
     setFormData(fd);
     setIsModalOpen(true);
@@ -111,6 +117,28 @@ export default function ClientPage() {
       key: "original_contract_value",
       label: "CONTRACT VALUE",
       render: (val: any, row: any) => val ? `${row.currency || 'QAR'} ${Number(val).toLocaleString()}` : '—'
+    },
+    { 
+      key: "contract_end_date", 
+      label: "EXPIRES",
+      render: (val: any) => {
+        if (!val) return <span className="text-gray-600 text-xs">No expiry</span>;
+        const date = new Date(val);
+        const now = new Date();
+        const daysLeft = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const isExpired = daysLeft < 0;
+        const isUrgent = daysLeft >= 0 && daysLeft <= 30;
+        let colorClass = 'text-gray-400';
+        if (isExpired) colorClass = 'text-red-500 font-bold';
+        else if (isUrgent) colorClass = 'text-yellow-500';
+        return (
+          <div className="flex flex-col">
+            <span className={colorClass}>{date.toLocaleDateString()}</span>
+            {isExpired && <span className="text-[10px] text-red-500">Expired</span>}
+            {!isExpired && isUrgent && <span className="text-[10px] text-yellow-500">{daysLeft}d left</span>}
+          </div>
+        );
+      }
     },
     {
       key: "actions",
@@ -201,6 +229,14 @@ export default function ClientPage() {
             <input type="number" step="any" className="input" value={formData.running_balance} onChange={ev => setFormData({...formData, running_balance: ev.target.value})} />
           </div>
           <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">CONTRACT START DATE</label>
+            <input type="date" className="input" value={formData.contract_start_date} onChange={ev => setFormData({...formData, contract_start_date: ev.target.value})} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">CONTRACT END DATE</label>
+            <input type="date" className="input" value={formData.contract_end_date} onChange={ev => setFormData({...formData, contract_end_date: ev.target.value})} />
+          </div>
+          <div className="space-y-2 col-span-2">
             <label className="text-sm font-medium text-gray-300">DESCRIPTION</label>
             <input type="text" className="input" value={formData.description} onChange={ev => setFormData({...formData, description: ev.target.value})} />
           </div>
@@ -218,7 +254,7 @@ export default function ClientPage() {
           entityName="Client"
           apiEndpoint="/api/clients"
           onSuccess={fetchData}
-          expectedHeaders={['client_name', 'contract_no', 'currency', 'original_contract_value', 'running_balance', 'description', 'preset_id']}
+          expectedHeaders={['client_name', 'contract_no', 'currency', 'original_contract_value', 'running_balance', 'contract_start_date', 'contract_end_date', 'description', 'preset_id']}
       />
     </div>
   );

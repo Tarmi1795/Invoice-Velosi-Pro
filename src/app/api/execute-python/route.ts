@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     // Path to the script relative to the project root
     const scriptPath = path.join(process.cwd(), "scripts", scriptName);
 
-    return new Promise((resolve) => {
+    return new Promise<NextResponse>((resolve) => {
       exec(`python "${scriptPath}"`, (error, stdout, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);

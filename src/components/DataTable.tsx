@@ -37,9 +37,9 @@ export function DataTable({ data, columns, searchKey, onRowClick }: DataTablePro
   const paginatedData = filteredData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
-    <div className="card !p-0 overflow-hidden flex flex-col">
+    <div className="card !p-0 overflow-hidden flex flex-col min-w-0">
       {/* Table Header / Toolbar */}
-      <div className="p-4 border-b border-[#374151] flex items-center justify-between bg-[#1f2937]">
+      <div className="p-4 border-b border-[#374151] flex items-center justify-between bg-[#1f2937] flex-shrink-0">
         <div className="relative w-64">
           <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
           <input 
@@ -56,12 +56,16 @@ export function DataTable({ data, columns, searchKey, onRowClick }: DataTablePro
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-[#111827]/50 border-b border-[#374151]">
               {columns.map((col) => (
-                <th key={col.key} className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <th 
+                  key={col.key} 
+                  className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  style={{ minWidth: '140px' }}
+                >
                   {col.label}
                 </th>
               ))}
@@ -82,8 +86,13 @@ export function DataTable({ data, columns, searchKey, onRowClick }: DataTablePro
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-6 py-4 text-sm text-gray-300">
-                      {col.render ? col.render(row[col.key], row) : row[col.key]}
+                    <td 
+                      key={col.key} 
+                      className="px-4 py-3 text-sm text-gray-300 whitespace-nowrap"
+                      style={{ minWidth: '140px', maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={String(row[col.key] ?? '')}
+                    >
+                      {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '')}
                     </td>
                   ))}
                 </tr>
@@ -94,7 +103,7 @@ export function DataTable({ data, columns, searchKey, onRowClick }: DataTablePro
       </div>
 
       {/* Pagination */}
-      <div className="p-4 border-t border-[#374151] flex items-center justify-between bg-[#1f2937] mt-auto">
+      <div className="p-4 border-t border-[#374151] flex items-center justify-between bg-[#1f2937] mt-auto flex-shrink-0">
         <span className="text-sm text-gray-400">
           Page <span className="text-white font-medium">{page}</span> of <span className="text-white font-medium">{totalPages || 1}</span>
         </span>

@@ -13,14 +13,25 @@ model workflow_presets {
   description           String?
   visible_fields        String?   // JSON array of field keys shown in forms
   workflow_steps        String?   // JSON array of steps e.g. ["Proforma","SES","Invoice"]
-  default_values        String?   // JSON object of defaults e.g. {"currency":"USD","duration_tag":"Days"}
-  invoice_template      String?   // template filename e.g. "invoice_qp.html"
-  company_address       String?   // Office address on the invoice
-  company_contact       String?   // Email/Phone on the invoice
-  bank_details          String?   // Bank payment instructions
+  default_values        String?   // JSON object of defaults
+  invoice_template      String?   // template filename
+  company_profile_id    String?   // Link to a separate company/bank profile
+  company_profile       company_profiles? @relation(fields: [company_profile_id], references: [id])
   created_at            DateTime? @default(now())
   updated_at            DateTime? @default(now())
   clients_and_contracts clients_and_contracts[]
+}
+
+model company_profiles {
+  id                String    @id @default(cuid())
+  name              String    @unique
+  address           String?
+  contact           String?
+  bank_details      String?
+  logo_path         String?   @default("templates/logos/velosi_logo.png")
+  workflow_presets  workflow_presets[]
+  created_at        DateTime? @default(now())
+  updated_at        DateTime? @default(now())
 }
 
 model clients_and_contracts {
@@ -31,6 +42,8 @@ model clients_and_contracts {
   original_contract_value Float?
   running_balance         Float?
   description             String?
+  contract_start_date     DateTime?
+  contract_end_date       DateTime?
   preset_id               String?
   created_at              DateTime? @default(now())
   updated_at              DateTime? @default(now())
@@ -39,19 +52,50 @@ model clients_and_contracts {
 }
 
 model projects {
-  id                  String               @id @default(uuid())
-  contract_id         String?
-  project_name        String?
-  po_no               String?
-  itp_code            String?
-  focal_name          String?
-  focal_email         String?
-  budget              Float?               @default(0)
-  active_status       Boolean?             @default(true)
-  created_at          DateTime?            @default(now())
-  updated_at          DateTime?            @default(now())
-  clients_and_contracts clients_and_contracts? @relation(fields: [contract_id], references: [id])
-  inspections_summary inspections_summary[]
+  id                    String                 @id @default(uuid())
+  contract_id           String?
+  project_name          String?
+  po_no                 String?                // Main PO (optional)
+  itp_code              String?                // Main ITP Code (optional)
+  focal_name            String?
+  focal_email           String?
+  active_status         Boolean?               @default(true)
+  created_at            DateTime?              @default(now())
+  updated_at            DateTime?              @default(now())
+  clients_and_contracts  clients_and_contracts? @relation(fields: [contract_id], references: [id])
+  inspections_summary   inspections_summary[]
+  itp_pos               itp_pos[]
+}
+
+model itp_pos {
+  id                String    @id @default(uuid())
+  project_id        String?
+  itp_po_number     String?
+  location          String?
+  inspector_id      String?
+  expiry_date       DateTime?
+  designation       String?
+  rates             Float?
+  original_budget   Float?    @default(0)
+  total_invoiced    Float?    @default(0)
+  status            String?   @default("Active")
+  created_at        DateTime? @default(now())
+  updated_at        DateTime? @default(now())
+  projects          projects? @relation(fields: [project_id], references: [id])
+  inspectors        inspectors? @relation(fields: [inspector_id], references: [id])
+  revisions         itp_revisions[]
+}
+
+model itp_revisions {
+  id                String    @id @default(uuid())
+  itp_po_id         String?
+  revision_no       Int?
+  revised_date      DateTime? @default(now())
+  budget_adjustment Float?    @default(0) // Can be positive or negative
+  new_expiry_date   DateTime?
+  remarks           String?
+  created_at        DateTime? @default(now())
+  itp_pos           itp_pos? @relation(fields: [itp_po_id], references: [id])
 }
 
 model inspectors {
@@ -62,6 +106,7 @@ model inspectors {
   created_at          DateTime?            @default(now())
   updated_at          DateTime?            @default(now())
   inspections_summary inspections_summary[]
+  itp_pos             itp_pos[]
 }
 
 model inspections_summary {

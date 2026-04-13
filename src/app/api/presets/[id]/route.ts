@@ -15,9 +15,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
         workflow_steps: body.workflow_steps,
         default_values: body.default_values,
         invoice_template: body.invoice_template,
-        company_address: body.company_address,
-        company_contact: body.company_contact,
-        bank_details: body.bank_details,
+        company_profile_id: body.company_profile_id,
       }
     });
     return NextResponse.json(updated);
@@ -26,12 +24,22 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+
+    // 1. Disconnect any contracts using this preset
+    await prisma.clients_and_contracts.updateMany({
+      where: { preset_id: id },
+      data: { preset_id: null }
+    });
+
+    // 2. Delete the preset
     await prisma.workflow_presets.delete({ where: { id } });
+    
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to delete preset" }, { status: 500 });
+    console.error("Delete preset error:", error);
+    return NextResponse.json({ error: "Failed to delete preset. It might be in use." }, { status: 500 });
   }
 }

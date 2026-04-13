@@ -46,10 +46,12 @@ export default function InvoicePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/invoices', { cache: 'no-store' });
+      const res = await fetch(`/api/invoices?_=${Date.now()}`, { cache: 'no-store' });
+      console.log('GET /api/invoices status:', res.status);
       const d = await res.json();
+      console.log('GET /api/invoices data:', JSON.stringify(d, null, 2));
       setData(Array.isArray(d) ? d : []);
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error('fetchData error:', err); }
     finally { setLoading(false); }
   };
 
@@ -92,7 +94,27 @@ export default function InvoicePage() {
     ev.preventDefault();
     const url = editingItem ? `/api/invoices/${editingItem.id}` : '/api/invoices';
     const method = editingItem ? 'PUT' : 'POST';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+    
+    const payload = { ...formData };
+    if (payload.total_amount) payload.total_amount = Number(payload.total_amount);
+    if (payload.credit_memo_amount) payload.credit_memo_amount = Number(payload.credit_memo_amount);
+    if (payload.inspection_id === '') payload.inspection_id = null;
+    
+    console.log('Submitting:', JSON.stringify(payload, null, 2));
+    
+    const result = await fetch(url, { 
+      method, 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(payload)
+    });
+    
+    const responseData = await result.json();
+    console.log('Response:', result.status, JSON.stringify(responseData, null, 2));
+    
+    if (!result.ok) {
+      alert('Failed to save: ' + (responseData.error || result.statusText));
+      return;
+    }
     setIsModalOpen(false); setEditingItem(null); setFormData(initialForm);
     setVisibleFields(null); setPresetName(null);
     await fetchData();
@@ -122,18 +144,18 @@ export default function InvoicePage() {
     {
       key: "actions", label: "Actions",
       render: (_: any, row: any) => (
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
           <button 
-            onClick={() => window.open(`/api/generate-invoice?invoice_id=${row.id}&template=proforma_generic.html`, '_blank')}
+            onClick={() => window.open(`/api/generate-invoice?invoice_id=${row.id}&print=1`, '_blank')}
             className="text-orange-500 hover:text-orange-400 p-1"
-            title="Generate Proforma PDF"
+            title="Export to PDF"
           >
             <FileText size={18} />
           </button>
           <button 
             onClick={() => window.open(`/api/generate-invoice?invoice_id=${row.id}`, '_blank')}
-            className="text-green-500 hover:text-green-400 p-1"
-            title="Generate Commercial Invoice"
+            className="text-gray-400 hover:text-white p-1"
+            title="Preview HTML"
           >
             <Printer size={18} />
           </button>
