@@ -2,7 +2,7 @@ import { useData } from "./useData";
 
 interface Project {
   id: string;
-  contract_id: string | null;
+  contract_no: string | null;
   project_name: string;
   po_no: string | null;
   itp_code: string | null;

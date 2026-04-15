@@ -22,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
     });
     const updated = await prisma.inspections_summary.update({
-      where: { id: id },
+      where: { visit_ref: id },
       data: body
     });
     return NextResponse.json(updated);
@@ -35,7 +35,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   try {
       const { id } = await params;
     await prisma.inspections_summary.delete({
-      where: { id: id }
+      where: { visit_ref: id }
     });
     return NextResponse.json({ success: true });
   } catch (error) {

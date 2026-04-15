@@ -39,7 +39,7 @@ model company_profiles {
 model clients_and_contracts {
   id                      String    @id @default(uuid())
   client_name             String?
-  contract_no             String?
+  contract_no             String?   @unique
   currency                String?   @default("QAR")
   original_contract_value Float?
   running_balance         Float?
@@ -57,20 +57,20 @@ model clients_and_contracts {
 
 model projects {
   id                    String                 @id @default(uuid())
-  contract_id           String?
-  project_name          String?
-  po_no                 String?                // Main PO (optional)
-  itp_code              String?                // Main ITP Code (optional)
+  contract_no           String?
+  project_name          String                 @unique
+  po_no                 String?
+  itp_code              String?
   focal_name            String?
   focal_email           String?
   active_status         Boolean?               @default(true)
   created_at            DateTime?              @default(now())
   updated_at            DateTime?              @default(now())
-  clients_and_contracts  clients_and_contracts? @relation(fields: [contract_id], references: [id])
+  clients_and_contracts clients_and_contracts? @relation(fields: [contract_no], references: [contract_no])
   inspections_summary   inspections_summary[]
   itp_pos               itp_pos[]
 
-  @@index([contract_id])
+  @@index([contract_no])
 }
 
 model itp_pos {
@@ -148,21 +148,22 @@ model itp_revisions {
 
 model inspectors {
   id                  String               @id @default(uuid())
-  full_name           String?
-  job_title           String?
-  base_location       String?
-  created_at          DateTime?            @default(now())
-  updated_at          DateTime?            @default(now())
-  inspections_summary inspections_summary[]
-  itp_pos             itp_pos[]
+  employee_no          String?              @unique
+  full_name            String?
+  job_title            String?
+  base_location        String?
+  created_at           DateTime?            @default(now())
+  updated_at           DateTime?            @default(now())
+  inspections_summary  inspections_summary[]
+  itp_pos              itp_pos[]
 }
 
 model inspections_summary {
-  id                    String                   @id @default(uuid())
-  project_id            String?
-  inspector_id          String?
-  coordinator_name      String?
-  vendor_location       String?
+  visit_ref              String                   @id
+  project_name           String?
+  employee_no            String?
+  coordinator_name       String?
+  vendor_location        String?
   inspection_start_date DateTime?
   inspection_end_date   DateTime?
   report_no             String?
@@ -176,12 +177,15 @@ model inspections_summary {
   ts_file_verified      Boolean?                 @default(false)
   created_at            DateTime?                @default(now())
   updated_at            DateTime?                @default(now())
-  inspectors            inspectors?              @relation(fields: [inspector_id], references: [id])
-  projects              projects?                @relation(fields: [project_id], references: [id])
+  inspectors            inspectors?              @relation(fields: [employee_no], references: [employee_no])
+  projects              projects?                @relation(fields: [project_name], references: [project_name])
   proformas_and_invoices proformas_and_invoices[]
 
-  @@index([project_id])
-  @@index([inspector_id])
+
+  // ses_records removed — SES links to proforma, not inspection directly
+
+  @@index([project_name])
+  @@index([employee_no])
   @@index([report_no])
   @@index([inspection_start_date])
   @@index([coordinator_name])
@@ -207,7 +211,7 @@ model proformas_and_invoices {
   payment_status        String?              @default("Pending")
   created_at            DateTime?            @default(now())
   updated_at            DateTime?            @default(now())
-  inspections_summary   inspections_summary? @relation(fields: [inspection_id], references: [id])
+  inspections_summary   inspections_summary? @relation(fields: [inspection_id], references: [visit_ref])
   ses_records           ses_records[]
 
   @@index([inspection_id])

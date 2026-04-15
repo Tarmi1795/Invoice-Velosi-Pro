@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizeRowWithOptions } from "@/lib/dataNormalizer";
 
 export async function POST(request: Request) {
   try {
@@ -13,19 +14,18 @@ export async function POST(request: Request) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        await prisma.inspectors.create({
-          data: {
-            full_name: row.full_name || row.name || null,
-            job_title: row.job_title || row.title || null,
-            base_location: row.base_location || row.location || null,
-          },
-        });
+        const data = normalizeRowWithOptions(rows[i], {}) as any;
+        if (!data.full_name && data.name) data.full_name = data.name;
+        if (!data.job_title && data.title) data.job_title = data.title;
+        if (!data.base_location && data.location) data.base_location = data.location;
+
+        await prisma.inspectors.create({ data });
         success++;
       } catch (e) {
         failed++;
-        errors.push(`Row ${success + failed}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

@@ -2,8 +2,8 @@ import { useData } from "./useData";
 
 interface Inspection {
   id: string;
-  project_id: string | null;
-  inspector_id: string | null;
+  project_name: string | null;
+  employee_no: string | null;
   coordinator_name: string | null;
   vendor_location: string | null;
   inspection_start_date: string | null;

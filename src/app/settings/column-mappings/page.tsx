@@ -7,8 +7,8 @@ const ENTITY_TYPES = ["clients", "projects", "inspections", "invoices", "ses", "
 
 const AVAILABLE_FIELDS: Record<string, string[]> = {
   clients: ["client_name", "contract_no", "currency", "original_contract_value", "running_balance", "description", "contract_start_date", "contract_end_date", "preset_id"],
-  projects: ["contract_id", "project_name", "po_no", "itp_code", "focal_name", "focal_email", "active_status"],
-  inspections: ["project_id", "inspector_id", "report_no", "coordinator_name", "vendor_location", "inspection_start_date", "inspection_end_date", "work_duration", "ot_duration", "duration_tag", "travel_routing", "mileage", "expenses_amount", "ts_filename", "ts_file_verified"],
+  projects: ["contract_no", "project_name", "po_no", "itp_code", "focal_name", "focal_email", "active_status"],
+  inspections: ["project_name", "employee_no", "report_no", "coordinator_name", "vendor_location", "inspection_start_date", "inspection_end_date", "work_duration", "ot_duration", "duration_tag", "travel_routing", "mileage", "expenses_amount", "ts_filename", "ts_file_verified"],
   invoices: ["inspection_id", "proforma_inv_no", "proforma_inv_date", "sap_sales_order", "invoice_no", "invoice_date", "conso_invoice_no", "conso_filename", "total_amount", "credit_memo_no", "credit_memo_amount", "payment_status"],
   ses: ["proforma_inv_id", "ses_no", "ses_date", "ses_value", "sap_work_order", "status"],
   inspectors: ["full_name", "job_title", "base_location"],

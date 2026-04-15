@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Search, ChevronLeft, ChevronRight, Square, CheckSquare, MinusSquare, Trash2 } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Square, CheckSquare, MinusSquare, Trash2, ChevronUp, ChevronDown, Download } from "lucide-react";
 
 interface Column {
   key: string;
@@ -25,23 +25,29 @@ interface DataTableProps {
   selectedIds?: string[];
   onSelectionChange?: (ids: string[]) => void;
   batchActions?: BatchAction[];
+  highlightedId?: string;
 }
 
-export function DataTable({ 
-  data, 
-  columns, 
-  searchKey, 
+export function DataTable({
+  data,
+  columns,
+  searchKey,
   onRowClick,
   selectable = true,
   selectedIds = [],
   onSelectionChange,
-  batchActions
+  batchActions,
+  highlightedId: externalHighlightedId
 }: DataTableProps) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [internalSelected, setInternalSelected] = useState<string[]>([]);
-  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [internalHighlighted, setInternalHighlighted] = useState<string | null>(null);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const highlightedId = externalHighlightedId ?? internalHighlighted;
 
   const safeData = Array.isArray(data) ? data : [];
   
@@ -53,13 +59,35 @@ export function DataTable({
     if (searchKey && row[searchKey]) {
       return String(row[searchKey]).toLowerCase().includes(search.toLowerCase());
     }
-    return Object.values(row).some((val) => 
+    return Object.values(row).some((val) =>
       String(val).toLowerCase().includes(search.toLowerCase())
     );
   });
 
-  const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-  const paginatedData = filteredData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (!sortKey) return 0;
+    const aVal = a[sortKey] ?? '';
+    const bVal = b[sortKey] ?? '';
+    if (typeof aVal === 'number' && typeof bVal === 'number') {
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    }
+    return sortDir === 'asc'
+      ? String(aVal).localeCompare(String(bVal))
+      : String(bVal).localeCompare(String(aVal));
+  });
+
+  const totalPages = Math.ceil(sortedData.length / rowsPerPage);
+  const paginatedData = sortedData.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else if (sortDir === 'desc') { setSortKey(null); setSortDir('asc'); }
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
 
   const allPageSelected = paginatedData.length > 0 && paginatedData.every(row => activeSelection.includes(row.id));
   const somePageSelected = paginatedData.some(row => activeSelection.includes(row.id));
@@ -92,7 +120,7 @@ export function DataTable({
     if (selectable) {
       toggleSelectRow(row.id);
     }
-    setHighlightedId(row.id);
+    setInternalHighlighted(row.id);
     if (onRowClick) onRowClick(row);
   };
 
@@ -101,6 +129,23 @@ export function DataTable({
     if (confirm(`Apply "${action.label}" to ${activeSelection.length} selected item(s)?`)) {
       action.onClick(activeSelection);
     }
+  };
+
+  const handleExportCSV = () => {
+    const headers = columns.map(c => c.label);
+    const rows = filteredData.map(row => columns.map(c => {
+      const val = row[c.key];
+      if (val == null) return '';
+      const str = String(typeof val === 'object' && val !== null ? JSON.stringify(val) : val);
+      return str.includes(',') || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
+    }));
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `export_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   const selectColumn: Column = { key: "_select", label: "" };
@@ -154,14 +199,20 @@ export function DataTable({
           <div className="text-sm font-medium text-gray-400">
             Total: {filteredData.length} records
           </div>
+          <button
+            onClick={handleExportCSV}
+            className="btn-secondary flex items-center gap-1.5 text-xs"
+          >
+            <Download size={14} /> Export CSV
+          </button>
         </div>
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto w-full table-scrollbar">
+      <div className="overflow-auto w-full table-scrollbar max-h-[calc(100vh-280px)]">
         <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
-            <tr className="bg-[#111827]/50 border-b border-[#374151]">
+          <thead className="sticky top-0 z-10 bg-[#111827]">
+            <tr className="border-b border-[#374151]">
               {selectable && (
                 <th className="px-4 py-3 w-12">
                   <button onClick={toggleSelectAll} className="hover:opacity-80 transition-opacity">
@@ -169,15 +220,30 @@ export function DataTable({
                   </button>
                 </th>
               )}
-              {columns.map((col) => (
-                <th 
-                  key={col.key} 
-                  className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap"
+              {columns.map((col) => {
+                const isSortActive = sortKey === col.key;
+                return (
+                <th
+                  key={col.key}
+                  className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:text-white transition-colors"
                   style={{ minWidth: '140px' }}
+                  onClick={() => handleSort(col.key)}
                 >
-                  {col.label}
+                  <span className="flex items-center gap-1">
+                    {col.label}
+                    {isSortActive ? (
+                      sortDir === 'asc' ? (
+                        <ChevronUp size={12} className="text-orange-500" />
+                      ) : (
+                        <ChevronDown size={12} className="text-orange-500" />
+                      )
+                    ) : (
+                      <ChevronUp size={12} className="text-gray-600" />
+                    )}
+                  </span>
                 </th>
-              ))}
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-[#374151]">

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizeRowWithOptions } from "@/lib/dataNormalizer";
 
 export async function POST(request: Request) {
   try {
@@ -13,28 +14,19 @@ export async function POST(request: Request) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        if (row.contract_start_date) row.contract_start_date = new Date(row.contract_start_date);
-        if (row.contract_end_date) row.contract_end_date = new Date(row.contract_end_date);
-        
-        await prisma.clients_and_contracts.create({
-          data: {
-            client_name: row.client_name || null,
-            contract_no: row.contract_no || null,
-            currency: row.currency || "QAR",
-            original_contract_value: row.original_contract_value ? Number(row.original_contract_value) : null,
-            running_balance: row.running_balance ? Number(row.running_balance) : null,
-            description: row.description || null,
-            contract_start_date: row.contract_start_date || null,
-            contract_end_date: row.contract_end_date || null,
-            preset_id: row.preset_id || null,
-          },
-        });
+        const data = normalizeRowWithOptions(rows[i], {
+          numberFields: ["original_contract_value", "running_balance"],
+          dateFields: ["contract_start_date", "contract_end_date"],
+        }) as any;
+        if (!data.currency) data.currency = "QAR";
+
+        await prisma.clients_and_contracts.create({ data });
         success++;
       } catch (e) {
         failed++;
-        errors.push(`Row ${success + failed}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

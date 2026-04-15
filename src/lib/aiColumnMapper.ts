@@ -26,11 +26,11 @@ const ENTITY_FIELDS: Record<string, string[]> = {
     "running_balance", "description", "contract_start_date", "contract_end_date", "preset_id"
   ],
   projects: [
-    "contract_id", "project_name", "po_no", "itp_code", "focal_name", 
+    "contract_no", "project_name", "po_no", "itp_code", "focal_name",
     "focal_email", "active_status"
   ],
   inspections: [
-    "project_id", "inspector_id", "report_no", "coordinator_name", "vendor_location",
+    "project_name", "employee_no", "report_no", "coordinator_name", "vendor_location",
     "inspection_start_date", "inspection_end_date", "work_duration", "ot_duration",
     "duration_tag", "travel_routing", "mileage", "expenses_amount", "ts_filename", "ts_file_verified"
   ],

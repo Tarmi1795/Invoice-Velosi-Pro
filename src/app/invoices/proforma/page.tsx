@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,7 +7,7 @@ import { EnhancedBatchUploadModal } from "@/components/EnhancedBatchUploadModal"
 import { Plus, Edit, Trash2, UploadCloud } from "lucide-react";
 import { todayISO } from "@/lib/dateUtils";
 
-export default function InvoicePage() {
+export default function ProformaPage() {
   const [data, setData] = useState<any[]>([]);
   const [inspections, setInspections] = useState<any[]>([]);
   const [itpPos, setItpPos] = useState<any[]>([]);
@@ -41,6 +40,7 @@ export default function InvoicePage() {
     try {
       const res = await fetch('/api/invoices', { cache: 'no-store' });
       const d = await res.json();
+      // Filter to show only rows that have proforma_inv_no but no invoice_no (proforma stage)
       setData(Array.isArray(d) ? d : []);
     } catch(err) {
       console.error(err);
@@ -86,7 +86,7 @@ export default function InvoicePage() {
     setFormError("");
 
     if (!formData.inspection_id) {
-      setFormError("Please select an inspection before creating an invoice.");
+      setFormError("Please select an inspection before creating a proforma.");
       return;
     }
 
@@ -101,10 +101,10 @@ export default function InvoicePage() {
 
     if (!res.ok) {
       const err = await res.json();
-      setFormError(err.error || "Failed to save invoice.");
+      setFormError(err.error || "Failed to save proforma.");
       return;
     }
-    
+
     setIsModalOpen(false);
     setEditingItem(null);
     setFormData(initialForm);
@@ -135,13 +135,10 @@ export default function InvoicePage() {
   const columns = [
     { key: "proforma_inv_no", label: "PROFORMA NO" },
     { key: "proforma_inv_date", label: "PROFORMA DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
-    { key: "invoice_no", label: "INVOICE NO" },
-    { key: "invoice_date", label: "INVOICE DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "po_no", label: "PO NO" },
-    { key: "sr_so_no", label: "SR/SO NO" },
     { key: "sap_sales_order", label: "SAP SALES ORDER" },
     { key: "total_amount", label: "TOTAL AMOUNT" },
-    { key: "conso_invoice_no", label: "CONSO INVOICE" },
+    { key: "payment_status", label: "STATUS" },
     {
       key: "actions",
       label: "Actions",
@@ -159,7 +156,7 @@ export default function InvoicePage() {
   ];
 
   const handleBatchDelete = async (ids: string[]) => {
-    if (!confirm(`Delete ${ids.length} invoice(s)?`)) return;
+    if (!confirm(`Delete ${ids.length} proforma(s)?`)) return;
     await Promise.all(ids.map(id => fetch(`/api/invoices/${id}`, { method: 'DELETE' })));
     fetchData();
   };
@@ -171,15 +168,15 @@ export default function InvoicePage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Invoices</h1>
+        <h1 className="text-2xl font-bold text-white">Proforma Invoices</h1>
         <div className="flex gap-3">
-            <button 
+            <button
                 onClick={() => setIsBatchModalOpen(true)}
                 className="btn-secondary flex items-center gap-2"
             >
                 <UploadCloud size={18} /> Batch Input
             </button>
-            <button 
+            <button
                 onClick={() => {
                     setEditingItem(null);
                     setFormData(getNewInvoiceForm());
@@ -187,7 +184,7 @@ export default function InvoicePage() {
                 }}
                 className="btn-primary flex items-center gap-2"
             >
-                <Plus size={18} /> Add Invoice
+                <Plus size={18} /> Add Proforma
             </button>
         </div>
       </div>
@@ -195,13 +192,13 @@ export default function InvoicePage() {
       {loading ? (
          <div className="card text-center text-gray-400 animate-pulse">Loading data...</div>
       ) : (
-         <DataTable data={data} columns={columns} searchKey="invoice_no" batchActions={batchActions} />
+         <DataTable data={data} columns={columns} searchKey="proforma_inv_no" batchActions={batchActions} />
       )}
 
-      <FormModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        title={editingItem ? "Edit Invoice" : "New Invoice"}
+      <FormModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingItem ? "Edit Proforma" : "New Proforma"}
       >
         <form onSubmit={handleSubmit} className="space-y-4 grid grid-cols-2 gap-4">
           {formError && (
@@ -209,26 +206,26 @@ export default function InvoicePage() {
               {formError}
             </div>
           )}
-          
+
               <div className="space-y-2 col-span-2">
-                <label className="text-sm font-medium text-gray-300">INSPECTIONS</label>
-                <select 
-                  className="input !bg-[#0f1117]" 
-                  value={formData.inspection_id} 
+                <label className="text-sm font-medium text-gray-300">INSPECTION (visit_ref)</label>
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.inspection_id}
                   onChange={ev => setFormData({...formData, inspection_id: ev.target.value})}
                 >
-                  <option value="">Select inspection id...</option>
+                  <option value="">Select inspection...</option>
                   {inspections.map((opt: any) => (
-                    <option key={opt.visit_ref} value={opt.visit_ref}>{opt.report_no || opt.visit_ref}</option>
+                    <option key={opt.visit_ref} value={opt.visit_ref}>{opt.report_no || opt.visit_ref} — {opt.project_name || 'No project'}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">ITP/PO (Optional)</label>
-                <select 
-                  className="input !bg-[#0f1117]" 
-                  value={formData.itp_po_id} 
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.itp_po_id}
                   onChange={ev => setFormData({...formData, itp_po_id: ev.target.value})}
                 >
                   <option value="">Select ITP/PO...</option>
@@ -240,9 +237,9 @@ export default function InvoicePage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">PO NUMBER</label>
-                <select 
-                  className="input !bg-[#0f1117]" 
-                  value={formData.po_no} 
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.po_no}
                   onChange={ev => setFormData({...formData, po_no: ev.target.value})}
                 >
                   <option value="">Select PO...</option>
@@ -254,89 +251,46 @@ export default function InvoicePage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">SR/SO NO. (Optional)</label>
-                <input 
-                  type="text" 
-                  className="input" 
-                  value={formData.sr_so_no} 
-                  onChange={ev => setFormData({...formData, sr_so_no: ev.target.value})} 
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.sr_so_no}
+                  onChange={ev => setFormData({...formData, sr_so_no: ev.target.value})}
                 />
               </div>
-              
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">PROFORMA INV NO</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 step="any"
-                className="input" 
-                value={formData.proforma_inv_no} 
-                onChange={ev => setFormData({...formData, proforma_inv_no: ev.target.value})} 
+                className="input"
+                value={formData.proforma_inv_no}
+                onChange={ev => setFormData({...formData, proforma_inv_no: ev.target.value})}
               />
             </div>
-            
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-300">PROFORMA INV DATE</label>
-                <input 
-                  type="date" 
-                  className="input" 
-                  value={formData.proforma_inv_date} 
-                  onChange={ev => setFormData({...formData, proforma_inv_date: ev.target.value})} 
+                <input
+                  type="date"
+                  className="input"
+                  value={formData.proforma_inv_date}
+                  onChange={ev => setFormData({...formData, proforma_inv_date: ev.target.value})}
                 />
               </div>
-              
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">SAP SALES ORDER</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 step="any"
-                className="input" 
-                value={formData.sap_sales_order} 
-                onChange={ev => setFormData({...formData, sap_sales_order: ev.target.value})} 
+                className="input"
+                value={formData.sap_sales_order}
+                onChange={ev => setFormData({...formData, sap_sales_order: ev.target.value})}
               />
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">INVOICE NO</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.invoice_no} 
-                onChange={ev => setFormData({...formData, invoice_no: ev.target.value})} 
-              />
-            </div>
-            
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-300">INVOICE DATE</label>
-                <input 
-                  type="date" 
-                  className="input" 
-                  value={formData.invoice_date} 
-                  onChange={ev => setFormData({...formData, invoice_date: ev.target.value})} 
-                />
-              </div>
-              
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">CONSO INVOICE NO</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.conso_invoice_no} 
-                onChange={ev => setFormData({...formData, conso_invoice_no: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">CONSO FILENAME</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.conso_filename} 
-                onChange={ev => setFormData({...formData, conso_filename: ev.target.value})} 
-              />
-            </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">TOTAL AMOUNT</label>
               <input
@@ -356,14 +310,14 @@ export default function InvoicePage() {
         </form>
       </FormModal>
 
-      <EnhancedBatchUploadModal 
+      <EnhancedBatchUploadModal
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
-          entityName="Invoice"
+          entityName="Proforma"
           entityType="invoices"
           apiEndpoint="/api/invoices"
           onSuccess={fetchData}
-          expectedHeaders={['visit_ref', 'inspection_id', 'itp_po_id', 'po_no', 'sr_so_no', 'proforma_inv_no', 'proforma_inv_date', 'sap_sales_order', 'invoice_no', 'invoice_date', 'conso_invoice_no', 'conso_filename', 'total_amount']}
+          expectedHeaders={['visit_ref', 'inspection_id', 'itp_po_id', 'po_no', 'sr_so_no', 'proforma_inv_no', 'proforma_inv_date', 'sap_sales_order', 'total_amount']}
       />
     </div>
   );

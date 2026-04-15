@@ -10,18 +10,15 @@ import { Plus, Edit, Trash2, UploadCloud } from "lucide-react";
 export default function ProjectPage() {
   const [data, setData] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   const initialForm = {
-    contract_id: "",
+    contract_no: "",
     project_name: "",
-    po_no: "",
-    itp_code: "",
-    budget: "",
     focal_name: "",
     focal_email: ""
   };
@@ -100,8 +97,6 @@ export default function ProjectPage() {
   const columns = [
     { key: "client_name", label: "CLIENT", render: (_: any, row: any) => row.clients_and_contracts?.client_name || 'N/A' },
     { key: "project_name", label: "PROJECT NAME" },
-    { key: "po_no", label: "PO NO" },
-    { key: "itp_code", label: "ITP CODE" },
     { key: "focal_name", label: "FOCAL NAME" },
     { key: "focal_email", label: "FOCAL EMAIL" },
     { key: "active_status", label: "ACTIVE", render: (val: any) => val ? "Yes" : "No" },
@@ -172,12 +167,12 @@ export default function ProjectPage() {
                 <label className="text-sm font-medium text-gray-300">CLIENTS</label>
                 <select 
                   className="input !bg-[#0f1117]" 
-                  value={formData.contract_id} 
-                  onChange={ev => setFormData({...formData, contract_id: ev.target.value})}
+                  value={formData.contract_no}
+                  onChange={ev => setFormData({...formData, contract_no: ev.target.value})}
                 >
-                  <option value="">Select contract id...</option>
+                  <option value="">Select contract no...</option>
                   {clients.map((opt: any) => (
-                    <option key={opt.id} value={opt.id}>{opt.client_name || opt.id}</option>
+                    <option key={opt.id} value={opt.contract_no}>{opt.contract_no} — {opt.client_name}</option>
                   ))}
                 </select>
               </div>
@@ -190,39 +185,6 @@ export default function ProjectPage() {
                 className="input" 
                 value={formData.project_name} 
                 onChange={ev => setFormData({...formData, project_name: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">PO NO</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.po_no} 
-                onChange={ev => setFormData({...formData, po_no: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">ITP CODE</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.itp_code} 
-                onChange={ev => setFormData({...formData, itp_code: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">BUDGET</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.budget} 
-                onChange={ev => setFormData({...formData, budget: ev.target.value})} 
               />
             </div>
             
@@ -263,7 +225,7 @@ export default function ProjectPage() {
           entityType="projects"
           apiEndpoint="/api/projects"
           onSuccess={fetchData}
-          expectedHeaders={['contract_id', 'project_name', 'po_no', 'itp_code', 'budget', 'focal_name', 'focal_email']}
+          expectedHeaders={['contract_no', 'project_name', 'focal_name', 'focal_email']}
       />
     </div>
   );

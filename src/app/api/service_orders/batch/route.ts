@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizeRowWithOptions } from "@/lib/dataNormalizer";
 
 export async function POST(request: Request) {
   try {
@@ -13,22 +14,17 @@ export async function POST(request: Request) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        const data: any = {};
-        const numberFields = ["amount"];
-
-        Object.keys(row).forEach(k => {
-          if (numberFields.includes(k) && row[k]) data[k] = Number(row[k]);
-          else if (typeof row[k] === "string" && row[k].trim() === "") data[k] = null;
-          else if (!["id", "created_at", "updated_at"].includes(k)) data[k] = row[k];
-        });
+        const data = normalizeRowWithOptions(rows[i], {
+          numberFields: ["amount"],
+        }) as any;
 
         await prisma.service_orders.create({ data });
         success++;
       } catch (e) {
         failed++;
-        errors.push(`Row ${success + failed}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

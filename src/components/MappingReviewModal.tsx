@@ -111,9 +111,24 @@ export function MappingReviewModal({
     onClose();
   };
 
-  const allFieldsMapped = localMappings.every(m => m.dbField && m.dbField !== "__N/A__");
+  const allFieldsMapped = localMappings.every(m => {
+    if (m.dbField && m.dbField !== "__N/A__") return true;
+    if (!m.dbField) {
+      const hasCandidate = availableFields.some(f =>
+        f.toLowerCase().includes(m.normalizedHeader) ||
+        m.normalizedHeader.includes(f.toLowerCase().replace(/_/g, ""))
+      );
+      return !hasCandidate;
+    }
+    return true;
+  });
 
   const getRowClass = (mapping: ColumnMapping) => {
+    const hasCandidate = availableFields.some(f =>
+      f.toLowerCase().includes(mapping.normalizedHeader) ||
+      mapping.normalizedHeader.includes(f.toLowerCase().replace(/_/g, ""))
+    );
+    if (!mapping.dbField && !hasCandidate) return "bg-gray-500/5 border-gray-500/30 opacity-75";
     if (mapping.dbField === "__N/A__") return "bg-gray-500/5 border-gray-500/20";
     if (!mapping.dbField) return "bg-red-500/5 border-red-500/20";
     if (mapping.confidence === "high") return "bg-green-500/5 border-green-500/20";

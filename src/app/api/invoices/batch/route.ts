@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizeRowWithOptions } from "@/lib/dataNormalizer";
 
 export async function POST(request: Request) {
   try {
@@ -10,11 +11,11 @@ export async function POST(request: Request) {
     if (type === 'proforma' && Array.isArray(inspection_ids)) {
       let success = 0;
       let failed = 0;
-      for (const inspectionId of inspection_ids) {
+      for (const visitRef of inspection_ids) {
         try {
           await prisma.proformas_and_invoices.create({
             data: {
-              inspection_id: inspectionId,
+              inspection_id: visitRef,
               proforma_inv_date: new Date(),
               payment_status: "Pending"
             }
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
     for (let i = 0; i < rows.length; i++) {
       if (!rows[i].inspection_id) {
-        failedRows.push({ row: i + 1, reason: "inspection_id is required" });
+        failedRows.push({ row: i + 1, reason: "inspection_id is required — select an Inspection before creating an Invoice" });
       }
     }
 
@@ -50,24 +51,18 @@ export async function POST(request: Request) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        const data: any = {};
-        const dateFields = ["proforma_inv_date", "invoice_date"];
-        const numberFields = ["total_amount", "credit_memo_amount"];
-
-        Object.keys(row).forEach(k => {
-          if (dateFields.includes(k) && row[k]) data[k] = new Date(row[k]);
-          else if (numberFields.includes(k) && row[k]) data[k] = Number(row[k]);
-          else if (typeof row[k] === "string" && row[k].trim() === "") data[k] = null;
-          else if (!["id", "created_at", "updated_at"].includes(k)) data[k] = row[k];
-        });
+        const data = normalizeRowWithOptions(rows[i], {
+          numberFields: ["total_amount", "credit_memo_amount"],
+          dateFields: ["proforma_inv_date", "invoice_date"],
+        }) as any;
 
         await prisma.proformas_and_invoices.create({ data });
         success++;
       } catch (e) {
         failed++;
-        errors.push(`Row ${success + failed}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

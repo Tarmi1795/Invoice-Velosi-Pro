@@ -25,9 +25,7 @@ export default function SESRecordPage() {
     ses_no: "",
     ses_date: "",
     ses_value: "",
-    sap_work_order: "",
     po_no: "",
-    itp_code: "",
     status: ""
   };
   const [formData, setFormData] = useState(initialForm);
@@ -67,9 +65,7 @@ export default function SESRecordPage() {
     ses_no: "",
     ses_date: todayISO(),
     ses_value: "",
-    sap_work_order: "",
     po_no: "",
-    itp_code: "",
     status: ""
   });
 
@@ -129,11 +125,7 @@ export default function SESRecordPage() {
     { key: "ses_date", label: "SES DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "itp_po_number", label: "ITP/PO NO", render: (val: any, row: any) => row.itp_pos?.itp_po_number || <span className="text-gray-500">—</span> },
     { key: "itp_project_name", label: "ITP PROJECT", render: (val: any, row: any) => row.itp_pos?.project_name || <span className="text-gray-500">—</span> },
-    { key: "po_no", label: "PO NO" },
-    { key: "itp_code", label: "ITP CODE" },
-    { key: "sap_work_order", label: "SAP WORK ORDER" },
     { key: "ses_value", label: "SES VALUE" },
-    { key: "status", label: "STATUS" },
     {
       key: "actions",
       label: "Actions",
@@ -251,40 +243,7 @@ export default function SESRecordPage() {
                 onChange={ev => setFormData({...formData, ses_value: ev.target.value})} 
               />
             </div>
-            
-<div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">SAP WORK ORDER</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.sap_work_order} 
-                onChange={ev => setFormData({...formData, sap_work_order: ev.target.value})} 
-              />
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">PO NO</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.po_no} 
-                onChange={ev => setFormData({...formData, po_no: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">ITP CODE</label>
-              <input 
-                type="text" 
-                step="any"
-                className="input" 
-                value={formData.itp_code} 
-                onChange={ev => setFormData({...formData, itp_code: ev.target.value})} 
-              />
-            </div>
-            
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-300">SES STATUS</label>
                    <select className="input" value={formData.status} onChange={ev => setFormData({...formData, status: ev.target.value})}>
@@ -294,7 +253,7 @@ export default function SESRecordPage() {
                      <option value="Approved">Approved</option>
                    </select>
                  </div>
-                 
+
 
           <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#2d2f3d]">
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
@@ -310,7 +269,7 @@ export default function SESRecordPage() {
           entityType="ses"
           apiEndpoint="/api/ses"
           onSuccess={fetchData}
-          expectedHeaders={['proforma_inv_id', 'itp_po_id', 'ses_no', 'ses_date', 'ses_value', 'sap_work_order', 'po_no', 'itp_code', 'status']}
+          expectedHeaders={['proforma_inv_id', 'itp_po_id', 'ses_no', 'ses_date', 'ses_value', 'status']}
         />
     </div>
   );

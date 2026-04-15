@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/Sidebar";
+import { GlobalSearchModal } from "@/components/GlobalSearchModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-[#111827] text-[#e4e4e7]`}>
         <Sidebar />
+        <GlobalSearchModal />
         <main className="ml-64 p-8 min-h-screen">
           {children}
         </main>

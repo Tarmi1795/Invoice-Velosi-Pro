@@ -22,9 +22,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    if (!body.inspector_id) {
+    if (!body.visit_ref) {
       return NextResponse.json(
-        { error: "inspector_id is required to create an inspection record" },
+        { error: "visit_ref is required to create an inspection record" },
         { status: 400 }
       );
     }

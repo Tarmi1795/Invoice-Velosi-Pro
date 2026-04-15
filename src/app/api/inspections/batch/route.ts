@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { normalizeRowWithOptions } from "@/lib/dataNormalizer";
 
 export async function POST(request: Request) {
   try {
@@ -9,17 +10,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "rows must be an array" }, { status: 400 });
     }
 
-    const failedRows: { row: number; reason: string }[] = [];
+    const skippedRows: { row: number; reason: string }[] = [];
 
     for (let i = 0; i < rows.length; i++) {
-      if (!rows[i].inspector_id) {
-        failedRows.push({ row: i + 1, reason: "inspector_id is required" });
+      if (!rows[i].visit_ref) {
+        skippedRows.push({ row: i + 1, reason: "visit_ref is required. Skipping." });
       }
     }
 
-    if (failedRows.length > 0) {
+    if (skippedRows.length > 0) {
       return NextResponse.json(
-        { error: "Batch validation failed", failedRows },
+        { error: "Batch validation failed", skippedRows },
         { status: 400 }
       );
     }
@@ -28,24 +29,19 @@ export async function POST(request: Request) {
     let failed = 0;
     const errors: string[] = [];
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
       try {
-        const data: any = { project_id: row.project_id || null, inspector_id: row.inspector_id || null };
-        const dateFields = ["inspection_start_date", "inspection_end_date"];
-        const numberFields = ["work_duration", "ot_duration", "mileage", "expenses_amount"];
-        
-        Object.keys(row).forEach(k => {
-          if (dateFields.includes(k) && row[k]) data[k] = new Date(row[k]);
-          else if (numberFields.includes(k) && row[k]) data[k] = Number(row[k]);
-          else if (k === "ts_file_verified") data[k] = row[k] === true || row[k] === "true";
-          else if (!["id", "created_at", "updated_at"].includes(k)) data[k] = row[k];
-        });
+        const data = normalizeRowWithOptions(rows[i], {
+          numberFields: ["work_duration", "ot_duration", "mileage", "expenses_amount"],
+          dateFields: ["inspection_start_date", "inspection_end_date"],
+          booleanFields: ["ts_file_verified"],
+        }) as any;
 
         await prisma.inspections_summary.create({ data });
         success++;
       } catch (e) {
         failed++;
-        errors.push(`Row ${success + failed}: ${e instanceof Error ? e.message : String(e)}`);
+        errors.push(`Row ${i + 1}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

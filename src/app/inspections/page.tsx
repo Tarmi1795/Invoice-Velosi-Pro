@@ -12,7 +12,6 @@ export default function InspectionPage() {
   const [data, setData] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [inspectors, setInspectors] = useState<any[]>([]);
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -20,8 +19,9 @@ export default function InspectionPage() {
   const [formError, setFormError] = useState("");
   
   const initialForm = {
-    project_id: "",
-    inspector_id: "",
+    visit_ref: "",
+    project_name: "",
+    employee_no: "",
     report_no: "",
     coordinator_name: "",
     vendor_location: "",
@@ -29,7 +29,6 @@ export default function InspectionPage() {
     inspection_end_date: "",
     work_duration: "",
     ot_duration: "",
-    duration_tag: "",
     travel_routing: "",
     mileage: "",
     expenses_amount: "",
@@ -75,8 +74,9 @@ export default function InspectionPage() {
   }, []);
 
   const getNewInspectionForm = () => ({
-    project_id: "",
-    inspector_id: "",
+    visit_ref: "",
+    project_name: "",
+    employee_no: "",
     report_no: "",
     coordinator_name: "",
     vendor_location: "",
@@ -84,7 +84,6 @@ export default function InspectionPage() {
     inspection_end_date: "",
     work_duration: "",
     ot_duration: "",
-    duration_tag: "",
     travel_routing: "",
     mileage: "",
     expenses_amount: "",
@@ -96,12 +95,12 @@ export default function InspectionPage() {
     ev.preventDefault();
     setFormError("");
 
-    if (!formData.inspector_id) {
-      setFormError("Please select an inspector before creating an inspection record.");
+    if (!formData.visit_ref) {
+      setFormError("Please enter a visit reference before creating an inspection record.");
       return;
     }
 
-    const url = editingItem ? `/api/inspections/${editingItem.id}` : '/api/inspections';
+    const url = editingItem ? `/api/inspections/${editingItem.visit_ref}` : '/api/inspections';
     const method = editingItem ? 'PUT' : 'POST';
     
     const res = await fetch(url, {
@@ -122,9 +121,9 @@ export default function InspectionPage() {
     await fetchData();
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (visit_ref: string) => {
     if (confirm("Delete this item?")) {
-      await fetch(`/api/inspections/${id}`, { method: 'DELETE' });
+      await fetch(`/api/inspections/${visit_ref}`, { method: 'DELETE' });
       fetchData();
     }
   };
@@ -153,7 +152,6 @@ export default function InspectionPage() {
     { key: "inspection_end_date", label: "END DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "work_duration", label: "WORK DURATION" },
     { key: "ot_duration", label: "OT DURATION" },
-    { key: "duration_tag", label: "DURATION TAG" },
     { key: "travel_routing", label: "TRAVEL ROUTING" },
     { key: "mileage", label: "MILEAGE" },
     { key: "expenses_amount", label: "EXPENSES" },
@@ -239,34 +237,46 @@ export default function InspectionPage() {
               {formError}
             </div>
           )}
-          
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-sm font-medium text-gray-300">VISIT REFERENCE</label>
+                <input
+                  type="text"
+                  className="input"
+                  value={formData.visit_ref}
+                  onChange={ev => setFormData({...formData, visit_ref: ev.target.value})}
+                  placeholder="e.g., REP-001"
+                />
+                <p className="text-xs text-gray-500">User-input reference from hardcopy documents</p>
+              </div>
+
               <div className="space-y-2 col-span-2">
                 <label className="text-sm font-medium text-gray-300">PROJECTS</label>
-                <select 
-                  className="input !bg-[#0f1117]" 
-                  value={formData.project_id} 
-                  onChange={ev => setFormData({...formData, project_id: ev.target.value})}
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.project_name}
+                  onChange={ev => setFormData({...formData, project_name: ev.target.value})}
                 >
-                  <option value="">Select project id...</option>
+                  <option value="">Select project...</option>
                   {projects.map((opt: any) => (
-                    <option key={opt.id} value={opt.id}>{opt.project_name || opt.id}</option>
+                    <option key={opt.id} value={opt.project_name}>{opt.project_name || opt.id}</option>
                   ))}
                 </select>
               </div>
-              
+
               <div className="space-y-2 col-span-2">
                 <label className="text-sm font-medium text-gray-300">INSPECTORS</label>
-                <select 
-                  className="input !bg-[#0f1117]" 
-                  value={formData.inspector_id} 
-                  onChange={ev => setFormData({...formData, inspector_id: ev.target.value})}
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.employee_no}
+                  onChange={ev => setFormData({...formData, employee_no: ev.target.value})}
                 >
-                  <option value="">Select inspector id...</option>
+                  <option value="">Select inspector...</option>
                   {inspectors.map((opt: any) => (
-                    <option key={opt.id} value={opt.id}>{opt.full_name || opt.id}</option>
+                    <option key={opt.id} value={opt.employee_no}>{opt.employee_no} — {opt.full_name}</option>
                   ))}
                 </select>
-                {!formData.inspector_id && (
+                {!formData.employee_no && (
                   <p className="text-xs text-yellow-500 mt-1">No inspector assigned — inspection may not be billable</p>
                 )}
               </div>
@@ -347,17 +357,6 @@ export default function InspectionPage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">DURATION TAG</label>
-              <input 
-                type="number" 
-                step="any"
-                className="input" 
-                value={formData.duration_tag} 
-                onChange={ev => setFormData({...formData, duration_tag: ev.target.value})} 
-              />
-            </div>
-            
-            <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">TRAVEL ROUTING</label>
               <input 
                 type="text" 
@@ -417,14 +416,14 @@ export default function InspectionPage() {
         </form>
       </FormModal>
 
-      <EnhancedBatchUploadModal 
+      <EnhancedBatchUploadModal
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
           entityName="Inspection"
           entityType="inspections"
           apiEndpoint="/api/inspections"
           onSuccess={fetchData}
-          expectedHeaders={['project_id', 'inspector_id', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'duration_tag', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
+          expectedHeaders={['visit_ref', 'project_name', 'employee_no', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
       />
     </div>
   );
