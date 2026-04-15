@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { UploadCloud, CheckCircle2, AlertTriangle, X, Download } from "lucide-react";
 import { downloadTemplate } from "@/lib/templateGenerator";
@@ -18,6 +18,35 @@ export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onS
   const [successCount, setSuccessCount] = useState<number | null>(null);
   const [errorCount, setErrorCount] = useState<number | null>(null);
   const [rowsCount, setRowsCount] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const droppedFile = files[0];
+      if (droppedFile.name.match(/\.(xlsx|xls)$/i)) {
+        setFile(droppedFile);
+      } else {
+        alert("Please drop a valid .xlsx or .xls file.");
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -128,13 +157,40 @@ export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onS
 
                 <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium text-gray-400">Select XLSX File</label>
-                    <input 
-                        type="file" 
-                        accept=".xlsx, .xls" 
-                        onChange={handleFileUpload} 
-                        className="py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer"
-                    />
-                </div>
+                    <div
+                      ref={dropRef}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                        isDragging
+                          ? "border-orange-500 bg-orange-500/10"
+                          : "border-[#374151] hover:border-orange-500/50"
+                      }`}
+                    >
+                      <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <UploadCloud
+                        size={32}
+                        className={`mx-auto mb-2 ${isDragging ? "text-orange-500" : "text-gray-400"}`}
+                      />
+                      <p className="text-sm text-gray-300">
+                        {file ? (
+                          <span className="text-green-400 font-medium">{file.name}</span>
+                        ) : (
+                          <>
+                            <span className="text-white">Drag & drop your file here</span>
+                            <br />
+                            <span className="text-gray-500">or click to browse</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
 
                 <button 
                   onClick={processFile} 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import * as XLSX from "xlsx";
 import { UploadCloud, CheckCircle2, AlertTriangle, X, Download, Brain } from "lucide-react";
 import { downloadTemplate } from "@/lib/templateGenerator";
@@ -46,6 +46,38 @@ export function EnhancedBatchUploadModal({
   const [headers, setHeaders] = useState<string[]>([]);
   const [availableFields, setAvailableFields] = useState<string[]>([]);
   const [mappings, setMappings] = useState<ColumnMapping[]>([]);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<{ row: number; reason: string }[]>([]);
+  const [errorSummary, setErrorSummary] = useState<string>("");
+  const [isDragging, setIsDragging] = useState(false);
+  const dropRef = useRef<HTMLDivElement>(null);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const droppedFile = files[0];
+      if (droppedFile.name.match(/\.(xlsx|xls)$/i)) {
+        setFile(droppedFile);
+      } else {
+        alert("Please drop a valid .xlsx or .xls file.");
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -159,7 +191,14 @@ export function EnhancedBatchUploadModal({
         headers.forEach((h, i) => {
           const field = headerToField.get(h);
           if (field) {
-            newRow[field] = row[i];
+            const raw = row[i];
+            // Skip blank, "NA", "N/A", or empty-whitespace values — treat as absent/not applicable
+            if (raw === null || raw === undefined || raw === "" ||
+                String(raw).trim().toUpperCase() === "NA" ||
+                String(raw).trim().toUpperCase() === "N/A") {
+              return; // don't include this field in the row
+            }
+            newRow[field] = raw;
           }
         });
         return newRow;
@@ -173,12 +212,35 @@ export function EnhancedBatchUploadModal({
       });
 
       const result = await res.json();
+
+      if (!res.ok) {
+        const errMsg = result.error || "Batch upload failed";
+        const failedRows: { row: number; reason: string }[] = result.failedRows || [];
+        setSuccessCount(0);
+        setErrorCount(failedRows.length > 0 ? failedRows.length : (rowsCount || 1));
+        setErrorSummary(errMsg);
+        setErrorDetails(failedRows.length > 0 ? failedRows : (result.errors || []).map((e: string, i: number) => ({ row: i + 1, reason: e })));
+        setShowErrorDetails(true);
+        setUploading(false);
+        return;
+      }
+
       setSuccessCount(result.success || 0);
       setErrorCount(result.failed || 0);
+      setErrorDetails(result.errors ? result.errors.map((e: string, i: number) => ({ row: i + 1, reason: e })) : []);
+      if (result.failed > 0 && result.errors && result.errors.length > 0) {
+        setErrorSummary(`${result.failed} row(s) failed to insert. See details below for specific errors and suggested fixes.`);
+      }
       onSuccess();
     } catch (err) {
       console.error(err);
-      alert("Failed to upload data");
+      const msg = err instanceof Error ? err.message : String(err);
+      setSuccessCount(0);
+      setErrorCount(rowsCount || 1);
+      setErrorSummary("Upload request failed: " + msg);
+      setErrorDetails([{ row: 0, reason: msg }]);
+      setShowErrorDetails(true);
+      setUploading(false);
     } finally {
       setUploading(false);
     }
@@ -195,6 +257,9 @@ export function EnhancedBatchUploadModal({
     setParsedData([]);
     setHeaders([]);
     setMappings([]);
+    setShowErrorDetails(false);
+    setErrorDetails([]);
+    setErrorSummary("");
     onClose();
   };
 
@@ -238,17 +303,39 @@ export function EnhancedBatchUploadModal({
 
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium text-gray-400">Select XLSX File</label>
-                <input 
-                  type="file" 
-                  accept=".xlsx, .xls" 
-                  onChange={handleFileUpload} 
-                  className="py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 cursor-pointer"
-                />
-                {file && (
-                  <p className="text-xs text-green-400">
-                    Selected: {file.name}
+                <div
+                  ref={dropRef}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                    isDragging
+                      ? "border-orange-500 bg-orange-500/10"
+                      : "border-[#374151] hover:border-orange-500/50"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <UploadCloud
+                    size={32}
+                    className={`mx-auto mb-2 ${isDragging ? "text-orange-500" : "text-gray-400"}`}
+                  />
+                  <p className="text-sm text-gray-300">
+                    {file ? (
+                      <span className="text-green-400 font-medium">{file.name}</span>
+                    ) : (
+                      <>
+                        <span className="text-white">Drag & drop your file here</span>
+                        <br />
+                        <span className="text-gray-500">or click to browse</span>
+                      </>
+                    )}
                   </p>
-                )}
+                </div>
               </div>
 
               <button 
@@ -278,7 +365,7 @@ export function EnhancedBatchUploadModal({
                   <AlertTriangle size={64} className="text-yellow-500" />
                 )}
               </div>
-              
+
               <h3 className="text-lg font-bold text-white mb-2">Upload Complete!</h3>
               <p className="text-gray-300">
                 Processed <span className="text-white font-medium">{rowsCount}</span> rows.
@@ -288,13 +375,43 @@ export function EnhancedBatchUploadModal({
                   <span className="block text-2xl font-bold">{successCount}</span>
                   <span className="text-xs uppercase tracking-wider">Success</span>
                 </div>
-                {errorCount ? (
+                {errorCount !== null && errorCount > 0 ? (
                   <div className="bg-red-500/10 border border-red-500/20 text-red-500 px-4 py-2 rounded-lg">
                     <span className="block text-2xl font-bold">{errorCount}</span>
                     <span className="text-xs uppercase tracking-wider">Failed</span>
                   </div>
                 ) : null}
               </div>
+
+              {errorSummary && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-300 text-left">
+                  <p className="font-medium text-red-400 mb-1">What went wrong:</p>
+                  <p>{errorSummary}</p>
+                </div>
+              )}
+
+              {errorCount !== null && errorCount > 0 && errorDetails.length > 0 && (
+                <div className="text-left">
+                  <button
+                    onClick={() => setShowErrorDetails(!showErrorDetails)}
+                    className="text-orange-500 hover:text-orange-400 text-sm font-medium flex items-center gap-1 mx-auto mb-2"
+                  >
+                    {showErrorDetails ? "Hide" : "Show"} failure details ({errorDetails.length})
+                  </button>
+                  {showErrorDetails && (
+                    <div className="bg-[#111827] border border-[#374151] rounded-lg p-3 max-h-48 overflow-y-auto text-left">
+                      {errorDetails.map((err, i) => (
+                        <div key={i} className="text-sm text-red-300 py-1 border-b border-[#2d2f3d] last:border-0">
+                          <span className="text-red-400 font-mono text-xs mr-2">
+                            {err.row > 0 ? `Row ${err.row}:` : 'Error:'}
+                          </span>
+                          {err.reason}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <button onClick={resetState} className="w-full btn-secondary mt-6 border-[#374151]">
                 Close
