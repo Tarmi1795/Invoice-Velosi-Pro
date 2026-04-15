@@ -20,6 +20,8 @@ model workflow_presets {
   created_at            DateTime? @default(now())
   updated_at            DateTime? @default(now())
   clients_and_contracts clients_and_contracts[]
+
+  @@index([company_profile_id])
 }
 
 model company_profiles {
@@ -49,6 +51,8 @@ model clients_and_contracts {
   updated_at              DateTime? @default(now())
   workflow_presets         workflow_presets? @relation(fields: [preset_id], references: [id])
   projects                projects[]
+
+  @@index([preset_id])
 }
 
 model projects {
@@ -65,12 +69,15 @@ model projects {
   clients_and_contracts  clients_and_contracts? @relation(fields: [contract_id], references: [id])
   inspections_summary   inspections_summary[]
   itp_pos               itp_pos[]
+
+  @@index([contract_id])
 }
 
 model itp_pos {
   id                String    @id @default(uuid())
   project_id        String?
   itp_po_number     String?
+  po_no             String?   @unique   // 1 PO per ITP enforced at DB level
   location          String?
   inspector_id      String?
   expiry_date       DateTime?
@@ -84,6 +91,45 @@ model itp_pos {
   projects          projects? @relation(fields: [project_id], references: [id])
   inspectors        inspectors? @relation(fields: [inspector_id], references: [id])
   revisions         itp_revisions[]
+
+  @@index([project_id])
+  @@index([inspector_id])
+  @@index([status])
+  @@index([expiry_date])
+  @@index([designation])
+  @@index([location])
+  @@index([po_no])
+}
+
+model po_records {
+  id            String    @id @default(uuid())
+  po_no         String    @unique
+  client_name   String?
+  project_name  String?
+  contract_no   String?
+  amount        Float?
+  status        String?   @default("Active")
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @default(now())
+
+  @@index([client_name])
+  @@index([status])
+}
+
+model service_orders {
+  id            String    @id @default(uuid())
+  sr_so_no      String    @unique   // 1 PO per SR/SO enforced at DB level
+  po_no         String?   @unique
+  client_name   String?
+  project_name  String?
+  amount        Float?
+  status        String?   @default("Pending")
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @default(now())
+
+  @@index([po_no])
+  @@index([client_name])
+  @@index([status])
 }
 
 model itp_revisions {
@@ -96,6 +142,8 @@ model itp_revisions {
   remarks           String?
   created_at        DateTime? @default(now())
   itp_pos           itp_pos? @relation(fields: [itp_po_id], references: [id])
+
+  @@index([itp_po_id])
 }
 
 model inspectors {
@@ -131,12 +179,22 @@ model inspections_summary {
   inspectors            inspectors?              @relation(fields: [inspector_id], references: [id])
   projects              projects?                @relation(fields: [project_id], references: [id])
   proformas_and_invoices proformas_and_invoices[]
+
+  @@index([project_id])
+  @@index([inspector_id])
+  @@index([report_no])
+  @@index([inspection_start_date])
+  @@index([coordinator_name])
+  @@index([vendor_location])
 }
 
 model proformas_and_invoices {
   id                    String               @id @default(uuid())
   inspection_id         String?
-  proforma_inv_no       String?
+  itp_po_id             String?              // Links to ITP/PO (enforces 1 ITP per invoice)
+  po_no                 String?              @unique   // 1 PO per invoice/SR enforced at DB level
+  sr_so_no              String?
+  proforma_inv_no        String?
   proforma_inv_date     DateTime?
   sap_sales_order       String?
   invoice_no            String?
@@ -151,17 +209,48 @@ model proformas_and_invoices {
   updated_at            DateTime?            @default(now())
   inspections_summary   inspections_summary? @relation(fields: [inspection_id], references: [id])
   ses_records           ses_records[]
+
+  @@index([inspection_id])
+  @@index([payment_status])
+  @@index([proforma_inv_no])
+  @@index([invoice_no])
+  @@index([itp_po_id])
+  @@index([po_no])
+  @@index([sr_so_no])
 }
 
 model ses_records {
   id                    String                  @id @default(uuid())
   proforma_inv_id       String?
+  itp_po_id             String?   // Links SES to ITP/PO
   ses_no                String?
   ses_date              DateTime?
   ses_value             Float?
   sap_work_order        String?
+  po_no                 String?
+  itp_code              String?
   status                String?                 @default("Pending")
   created_at            DateTime?               @default(now())
   updated_at            DateTime?               @default(now())
   proformas_and_invoices proformas_and_invoices? @relation(fields: [proforma_inv_id], references: [id])
+
+  @@index([proforma_inv_id])
+  @@index([ses_no])
+  @@index([status])
+  @@index([po_no])
+  @@index([sap_work_order])
+  @@index([itp_po_id])
+}
+
+model column_mapping_training {
+  id            String    @id @default(uuid())
+  entity_type   String    // e.g., "clients", "invoices", "projects", "inspections", "ses"
+  excel_header  String    // Original header from Excel (normalized lowercase)
+  db_field      String    // Target database field
+  instruction    String?   // User-provided instruction for this mapping
+  use_count     Int       @default(0) // Times this mapping was used successfully
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @default(now())
+  
+  @@unique([entity_type, excel_header])
 }

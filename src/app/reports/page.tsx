@@ -37,26 +37,10 @@ export default function ReportsPage() {
           { key: "client_name", label: "Client" },
           { key: "contract_no", label: "Contract No" },
           { key: "currency", label: "Currency" },
-          { 
-            key: "original_contract_value", 
-            label: "Orig Value",
-            render: (val: any) => val ? Number(val).toLocaleString() : '0' 
-          },
-          { 
-            key: "total_invoiced", 
-            label: "Total Invoiced",
-            render: (val: any) => val ? Number(val).toLocaleString() : '0' 
-          },
-          { 
-            key: "pct_depleted", 
-            label: "Depleted (%)",
-            render: (val: any) => val ? `${Number(val).toFixed(2)}%` : '0%' 
-          },
-          { 
-            key: "remaining", 
-            label: "Remaining",
-            render: (val: any) => val ? Number(val).toLocaleString() : '0' 
-          },
+          { key: "original_contract_value", label: "Orig Value", render: (val: any) => val ? Number(val).toLocaleString() : "0" },
+          { key: "total_invoiced", label: "Total Invoiced", render: (val: any) => val ? Number(val).toLocaleString() : "0" },
+          { key: "pct_depleted", label: "Depleted (%)", render: (val: any) => val ? `${Number(val).toFixed(2)}%` : "0%" },
+          { key: "remaining", label: "Remaining", render: (val: any) => val ? Number(val).toLocaleString() : "0" },
           { key: "budget_status", label: "Status" },
         ];
       case "invoice-pipeline":
@@ -64,11 +48,7 @@ export default function ReportsPage() {
           { key: "client_name", label: "Client" },
           { key: "project_name", label: "Project" },
           { key: "invoice_no", label: "Invoice No" },
-          { 
-            key: "total_amount", 
-            label: "Amount",
-            render: (val: any) => val ? Number(val).toLocaleString() : '0' 
-          },
+          { key: "total_amount", label: "Amount", render: (val: any) => val ? Number(val).toLocaleString() : "0" },
           { key: "payment_status", label: "Status" },
           { key: "ses_no", label: "SES No" },
           { key: "ses_status", label: "SES Status" },
@@ -78,11 +58,7 @@ export default function ReportsPage() {
           { key: "conso_invoice_no", label: "Conso Inv No" },
           { key: "client_name", label: "Client" },
           { key: "inspection_count", label: "Inspections" },
-          { 
-            key: "total_amount", 
-            label: "Amount",
-            render: (val: any) => val ? Number(val).toLocaleString() : '0' 
-          },
+          { key: "total_amount", label: "Amount", render: (val: any) => val ? Number(val).toLocaleString() : "0" },
           { key: "payment_status", label: "Status" },
           { key: "report_numbers", label: "Reports" },
         ];
@@ -94,7 +70,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Reports</h1>
-      
+
       {/* Tabs */}
       <div className="flex space-x-2 border-b border-[#374151] mb-4">
         {tabs.map((tab) => (

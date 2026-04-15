@@ -15,7 +15,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    console.log('POST /api/invoices body:', JSON.stringify(body, null, 2));
+
+    if (!body.inspection_id) {
+      return NextResponse.json(
+        { error: "inspection_id is required to create a proforma/invoice record" },
+        { status: 400 }
+      );
+    }
+
     Object.keys(body).forEach(k => {
       if (['work_duration', 'ot_duration', 'mileage', 'expenses_amount', 'total_amount', 'credit_memo_amount', 'ses_value', 'original_contract_value', 'running_balance'].includes(k)) {
         if(body[k]) body[k] = Number(body[k]);
@@ -30,15 +37,13 @@ export async function POST(request: Request) {
         if (typeof body[k] === 'string') body[k] = body[k].toLowerCase() === 'true';
       }
     });
-    console.log('Processed body:', JSON.stringify(body, null, 2));
 
     const newData = await prisma.proformas_and_invoices.create({
       data: body
     });
-    console.log('Created:', JSON.stringify(newData, null, 2));
     return NextResponse.json(newData, { status: 201 });
   } catch (error) {
-    console.error('POST /api/invoices error:', error);
+    console.error(error);
     return NextResponse.json({ error: "Failed to create" }, { status: 500 });
   }
 }

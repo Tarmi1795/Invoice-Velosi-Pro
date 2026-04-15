@@ -10,21 +10,19 @@ import { Plus, Edit, Trash2, UploadCloud } from "lucide-react";
 export default function ClientPage() {
   const [data, setData] = useState<any[]>([]);
   const [presets, setPresets] = useState<any[]>([]);
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const initialForm = {
     client_name: "",
     contract_no: "",
-    currency: "QAR",
+    currency: "",
     original_contract_value: "",
     running_balance: "",
     description: "",
-    contract_start_date: "",
-    contract_end_date: "",
     preset_id: ""
   };
   const [formData, setFormData] = useState(initialForm);
@@ -42,19 +40,21 @@ export default function ClientPage() {
     }
   };
 
-  const fetchPresets = async () => {
+  const fetchRelationships = async () => {
     try {
-      const res = await fetch('/api/presets', { cache: 'no-store' });
-      const d = await res.json();
-      setPresets(Array.isArray(d) ? d : []);
-    } catch (err) {
+      const [presetRes] = await Promise.all([
+        fetch('/api/presets', { cache: 'no-store' })
+      ]);
+      const [p] = await Promise.all([presetRes.json()]);
+      setPresets(Array.isArray(p) ? p : []);
+    } catch(err) {
       console.error(err);
     }
   };
 
   useEffect(() => {
     fetchData();
-    fetchPresets();
+    fetchRelationships();
   }, []);
 
   const handleSubmit = async (ev: React.FormEvent) => {
@@ -75,7 +75,7 @@ export default function ClientPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Delete this client/contract?")) {
+    if (confirm("Delete this item?")) {
       await fetch(`/api/clients/${id}`, { method: 'DELETE' });
       fetchData();
     }
@@ -85,67 +85,29 @@ export default function ClientPage() {
     setEditingItem(item);
     const fd: any = {};
     Object.keys(initialForm).forEach(k => {
-      if (k.includes('date') && item[k]) {
+      if (k === 'preset_id') {
+        fd[k] = item.preset_id != null ? String(item.preset_id) : "";
+      } else if(k.includes('date') && item[k]) {
         fd[k] = new Date(item[k]).toISOString().split('T')[0];
       } else {
-        fd[k] = item[k] !== null && item[k] !== undefined ? item[k] : "";
+        fd[k] = item[k] !== null ? item[k] : "";
       }
     });
     setFormData(fd);
     setIsModalOpen(true);
   };
 
-  const getPresetName = (presetId: string) => {
-    const p = presets.find(pr => pr.id === presetId);
-    return p ? p.preset_name : "—";
-  };
-
   const columns = [
     { key: "client_name", label: "CLIENT NAME" },
     { key: "contract_no", label: "CONTRACT NO" },
     { key: "currency", label: "CURRENCY" },
-    { 
-      key: "preset_id", 
-      label: "WORKFLOW PRESET",
-      render: (val: any) => val ? (
-        <span className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded">
-          {getPresetName(val)}
-        </span>
-      ) : <span className="text-gray-600 text-xs">None</span>
-    },
-    {
-      key: "original_contract_value",
-      label: "CONTRACT VALUE",
-      render: (val: any, row: any) => val ? `${row.currency || 'QAR'} ${Number(val).toLocaleString()}` : '—'
-    },
-    { 
-      key: "contract_end_date", 
-      label: "EXPIRES",
-      render: (val: any) => {
-        if (!val) return <span className="text-gray-600 text-xs">No expiry</span>;
-        const date = new Date(val);
-        const now = new Date();
-        const daysLeft = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        const isExpired = daysLeft < 0;
-        const isUrgent = daysLeft >= 0 && daysLeft <= 30;
-        let colorClass = 'text-gray-400';
-        if (isExpired) colorClass = 'text-red-500 font-bold';
-        else if (isUrgent) colorClass = 'text-yellow-500';
-        return (
-          <div className="flex flex-col">
-            <span className={colorClass}>{date.toLocaleDateString()}</span>
-            {isExpired && <span className="text-[10px] text-red-500">Expired</span>}
-            {!isExpired && isUrgent && <span className="text-[10px] text-yellow-500">{daysLeft}d left</span>}
-          </div>
-        );
-      }
-    },
+    { key: "preset_name", label: "WORKFLOW PRESET", render: (val: any) => val || <span className="text-gray-500">—</span> },
     {
       key: "actions",
       label: "Actions",
       render: (_: any, row: any) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEditModal(row)} className="text-orange-500 hover:text-orange-400 p-1">
+          <button onClick={() => openEditModal(row)} className="text-blue-500 hover:text-blue-400 p-1">
             <Edit size={18} />
           </button>
           <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:text-red-400 p-1">
@@ -159,7 +121,7 @@ export default function ClientPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-white">Clients & Contracts</h1>
+        <h1 className="text-2xl font-bold text-white">Clients</h1>
         <div className="flex gap-3">
             <button 
                 onClick={() => setIsBatchModalOpen(true)}
@@ -192,58 +154,91 @@ export default function ClientPage() {
         title={editingItem ? "Edit Client" : "New Client"}
       >
         <form onSubmit={handleSubmit} className="space-y-4 grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">CLIENT NAME</label>
-            <input required type="text" className="input" value={formData.client_name} onChange={ev => setFormData({...formData, client_name: ev.target.value})} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">CONTRACT NO</label>
-            <input required type="text" className="input" value={formData.contract_no} onChange={ev => setFormData({...formData, contract_no: ev.target.value})} />
-          </div>
           
-          <div className="space-y-2 col-span-2">
-            <label className="text-sm font-medium text-gray-300">WORKFLOW PRESET</label>
-            <select className="input !bg-[#111827]" value={formData.preset_id} onChange={ev => setFormData({...formData, preset_id: ev.target.value})}>
-              <option value="">No preset (show all fields)</option>
-              {presets.map(p => (
-                <option key={p.id} value={p.id}>{p.preset_name} — {p.description || ''}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 mt-1">Determines which fields appear in Inspection, Invoice, and SES forms when working under this contract.</p>
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">CLIENT NAME</label>
+              <input 
+                type="text" 
+                step="any"
+                className="input" 
+                value={formData.client_name} 
+                onChange={ev => setFormData({...formData, client_name: ev.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">CONTRACT NO</label>
+              <input 
+                type="text" 
+                step="any"
+                className="input" 
+                value={formData.contract_no} 
+                onChange={ev => setFormData({...formData, contract_no: ev.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">CURRENCY</label>
+              <input 
+                type="text" 
+                step="any"
+                className="input" 
+                value={formData.currency} 
+                onChange={ev => setFormData({...formData, currency: ev.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">ORIGINAL CONTRACT VALUE</label>
+              <input 
+                type="number" 
+                step="any"
+                className="input" 
+                value={formData.original_contract_value} 
+                onChange={ev => setFormData({...formData, original_contract_value: ev.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">RUNNING BALANCE</label>
+              <input 
+                type="number" 
+                step="any"
+                className="input" 
+                value={formData.running_balance} 
+                onChange={ev => setFormData({...formData, running_balance: ev.target.value})} 
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">DESCRIPTION</label>
+              <input 
+                type="text" 
+                step="any"
+                className="input" 
+                value={formData.description} 
+                onChange={ev => setFormData({...formData, description: ev.target.value})} 
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">CURRENCY</label>
-            <select className="input" value={formData.currency} onChange={ev => setFormData({...formData, currency: ev.target.value})}>
-              <option value="QAR">QAR</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">ORIGINAL CONTRACT VALUE</label>
-            <input type="number" step="any" className="input" value={formData.original_contract_value} onChange={ev => setFormData({...formData, original_contract_value: ev.target.value})} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">RUNNING BALANCE</label>
-            <input type="number" step="any" className="input" value={formData.running_balance} onChange={ev => setFormData({...formData, running_balance: ev.target.value})} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">CONTRACT START DATE</label>
-            <input type="date" className="input" value={formData.contract_start_date} onChange={ev => setFormData({...formData, contract_start_date: ev.target.value})} />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">CONTRACT END DATE</label>
-            <input type="date" className="input" value={formData.contract_end_date} onChange={ev => setFormData({...formData, contract_end_date: ev.target.value})} />
-          </div>
-          <div className="space-y-2 col-span-2">
-            <label className="text-sm font-medium text-gray-300">DESCRIPTION</label>
-            <input type="text" className="input" value={formData.description} onChange={ev => setFormData({...formData, description: ev.target.value})} />
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">WORKFLOW PRESET</label>
+              <select 
+                className="input !bg-[#0f1117]" 
+                value={formData.preset_id} 
+                onChange={ev => setFormData({...formData, preset_id: ev.target.value})}
+              >
+                <option value="">— No preset —</option>
+                {presets.map((opt: any) => (
+                  <option key={opt.id} value={opt.id}>{opt.preset_name || opt.id}</option>
+                ))}
+              </select>
+            </div>
+            
 
-          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#374151]">
+          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#2d2f3d]">
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
-            <button type="submit" className="btn-primary">Save Client</button>
+            <button type="submit" className="btn-primary">Save Changes</button>
           </div>
         </form>
       </FormModal>
@@ -254,7 +249,7 @@ export default function ClientPage() {
           entityName="Client"
           apiEndpoint="/api/clients"
           onSuccess={fetchData}
-          expectedHeaders={['client_name', 'contract_no', 'currency', 'original_contract_value', 'running_balance', 'contract_start_date', 'contract_end_date', 'description', 'preset_id']}
+          expectedHeaders={['client_name', 'contract_no', 'currency', 'original_contract_value', 'running_balance', 'description']}
       />
     </div>
   );

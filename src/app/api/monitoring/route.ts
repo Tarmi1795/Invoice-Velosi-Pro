@@ -70,6 +70,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    if (!body.inspector_id) {
+      return NextResponse.json(
+        { error: "inspector_id is required to create an ITP/PO record" },
+        { status: 400 }
+      );
+    }
+
     const itp = await prisma.itp_pos.create({
       data: {
         project_id: body.project_id,

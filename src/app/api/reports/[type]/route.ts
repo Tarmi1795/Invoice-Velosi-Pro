@@ -122,10 +122,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ type
         }
       });
 
-      const grouped = {};
+      const grouped: Record<string, any> = {};
       
       invoices.forEach(inv => {
-        const cno = inv.conso_invoice_no;
+        const cno = inv.conso_invoice_no as string;
         if (!grouped[cno]) {
           grouped[cno] = {
             conso_invoice_no: cno,

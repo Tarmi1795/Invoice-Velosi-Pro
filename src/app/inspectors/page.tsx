@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/DataTable";
 import { FormModal } from "@/components/FormModal";
-import { BatchUploadModal } from "@/components/BatchUploadModal";
+import { EnhancedBatchUploadModal } from "@/components/EnhancedBatchUploadModal";
 import { Plus, Edit, Trash2, UploadCloud } from "lucide-react";
 
 export default function InspectorPage() {
@@ -98,7 +98,7 @@ export default function InspectorPage() {
       label: "Actions",
       render: (_: any, row: any) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEditModal(row)} className="text-orange-500 hover:text-orange-400 p-1">
+          <button onClick={() => openEditModal(row)} className="text-blue-500 hover:text-blue-400 p-1">
             <Edit size={18} />
           </button>
           <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:text-red-400 p-1">
@@ -107,6 +107,16 @@ export default function InspectorPage() {
         </div>
       )
     }
+  ];
+
+  const handleBatchDelete = async (ids: string[]) => {
+    if (!confirm(`Delete ${ids.length} inspector(s)?`)) return;
+    await Promise.all(ids.map(id => fetch(`/api/inspectors/${id}`, { method: 'DELETE' })));
+    fetchData();
+  };
+
+  const batchActions = [
+    { label: "Delete", icon: <Trash2 size={14} />, variant: "danger" as const, onClick: handleBatchDelete }
   ];
 
   return (
@@ -136,7 +146,7 @@ export default function InspectorPage() {
       {loading ? (
          <div className="card text-center text-gray-400 animate-pulse">Loading data...</div>
       ) : (
-         <DataTable data={data} columns={columns} searchKey="full_name" />
+         <DataTable data={data} columns={columns} searchKey="full_name" batchActions={batchActions} />
       )}
 
       <FormModal 
@@ -180,17 +190,18 @@ export default function InspectorPage() {
             </div>
             
 
-          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#374151]">
+          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#2d2f3d]">
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary">Save Changes</button>
           </div>
         </form>
       </FormModal>
 
-      <BatchUploadModal 
+      <EnhancedBatchUploadModal 
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
           entityName="Inspector"
+          entityType="inspectors"
           apiEndpoint="/api/inspectors"
           onSuccess={fetchData}
           expectedHeaders={['full_name', 'job_title', 'base_location']}

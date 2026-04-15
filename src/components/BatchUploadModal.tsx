@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { UploadCloud, CheckCircle2, AlertTriangle, X } from "lucide-react";
+import { UploadCloud, CheckCircle2, AlertTriangle, X, Download } from "lucide-react";
+import { downloadTemplate } from "@/lib/templateGenerator";
 
 interface BatchUploadModalProps {
   isOpen: boolean;
@@ -8,7 +9,7 @@ interface BatchUploadModalProps {
   entityName: string;
   apiEndpoint: string;
   onSuccess: () => void;
-  expectedHeaders: string[]; // Provide user with expected headers
+  expectedHeaders: string[];
 }
 
 export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onSuccess, expectedHeaders }: BatchUploadModalProps) {
@@ -26,6 +27,11 @@ export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onS
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const filename = `${entityName.toLowerCase().replace(/ /g, "_")}_template.xlsx`;
+    downloadTemplate(expectedHeaders, filename);
+  };
+
   const processFile = async () => {
     if (!file) return;
     setUploading(true);
@@ -41,39 +47,26 @@ export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onS
         const sheet = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(sheet);
 
-        setRowsCount(rows.length);
+        const totalRows = rows.length;
+        setRowsCount(totalRows);
 
-        if(rows.length === 0) {
+        if(totalRows === 0) {
             alert("The uploaded excel sheet is empty.");
             setUploading(false);
             return;
         }
 
-        let sCount = 0;
-        let eCount = 0;
+        // Use batch API endpoint (single POST with all rows)
+        const batchEndpoint = apiEndpoint + "/batch";
+        const res = await fetch(batchEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rows }),
+        });
 
-        // Perform sequential or parallel POST. 
-        // Sequential is safer to not blast the poor database with 1000 requests instantly and crash prisma.
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-            const batch = rows.slice(i, i + BATCH_SIZE);
-            await Promise.all(batch.map(async (row: any) => {
-                try {
-                     const res = await fetch(apiEndpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(row)
-                     });
-                     if (res.ok) sCount++;
-                     else eCount++;
-                } catch(err) {
-                    eCount++;
-                }
-            }));
-        }
-
-        setSuccessCount(sCount);
-        setErrorCount(eCount);
+        const result = await res.json();
+        setSuccessCount(result.success || 0);
+        setErrorCount(result.failed || 0);
         onSuccess();
       } catch (err) {
         console.error(err);
@@ -110,7 +103,15 @@ export function BatchUploadModal({ isOpen, onClose, entityName, apiEndpoint, onS
         {successCount === null ? (
             <div className="space-y-4">
                 <div className="bg-[#111827] border border-[#374151] rounded-lg p-4 text-sm text-gray-300">
-                    <p className="font-medium text-white mb-2">Instructions:</p>
+                    <div className="flex justify-between items-start mb-2">
+                        <p className="font-medium text-white">Instructions:</p>
+                        <button 
+                          onClick={handleDownloadTemplate}
+                          className="flex items-center gap-1 text-orange-500 hover:text-orange-400 text-xs font-medium"
+                        >
+                            <Download size={14} /> Download Template
+                        </button>
+                    </div>
                     <ul className="list-disc pl-5 space-y-1 mb-3">
                         <li>Ensure exact column names match database keys.</li>
                         <li>Foreign keys (like <code className="bg-[#374151] px-1 rounded text-gray-100">project_id</code>) must use actual system IDs, not names.</li>

@@ -15,6 +15,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+
+    if (!body.inspector_id) {
+      return NextResponse.json(
+        { error: "inspector_id is required to create an inspection record" },
+        { status: 400 }
+      );
+    }
+
     Object.keys(body).forEach(k => {
       if (['work_duration', 'ot_duration', 'mileage', 'expenses_amount', 'total_amount', 'credit_memo_amount', 'ses_value', 'original_contract_value', 'running_balance'].includes(k)) {
         if(body[k]) body[k] = Number(body[k]);

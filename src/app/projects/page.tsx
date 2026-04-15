@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/DataTable";
 import { FormModal } from "@/components/FormModal";
-import { BatchUploadModal } from "@/components/BatchUploadModal";
+import { EnhancedBatchUploadModal } from "@/components/EnhancedBatchUploadModal";
 import { Plus, Edit, Trash2, UploadCloud } from "lucide-react";
 
 export default function ProjectPage() {
@@ -99,19 +99,14 @@ export default function ProjectPage() {
 
   const columns = [
     { key: "project_name", label: "PROJECT NAME" },
-    { key: "contract_id", label: "CONTRACT ID" },
     { key: "po_no", label: "PO NO" },
-    { key: "itp_code", label: "ITP CODE" },
     { key: "focal_name", label: "FOCAL NAME" },
-    { key: "focal_email", label: "FOCAL EMAIL" },
-    { key: "active_status", label: "STATUS", render: (val: any) => val ? 'Active' : 'Inactive' },
-    { key: "created_at", label: "CREATED", render: (val: any) => val ? new Date(val).toLocaleDateString() : '—' },
     {
       key: "actions",
       label: "Actions",
       render: (_: any, row: any) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEditModal(row)} className="text-orange-500 hover:text-orange-400 p-1">
+          <button onClick={() => openEditModal(row)} className="text-blue-500 hover:text-blue-400 p-1">
             <Edit size={18} />
           </button>
           <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:text-red-400 p-1">
@@ -120,6 +115,16 @@ export default function ProjectPage() {
         </div>
       )
     }
+  ];
+
+  const handleBatchDelete = async (ids: string[]) => {
+    if (!confirm(`Delete ${ids.length} project(s)?`)) return;
+    await Promise.all(ids.map(id => fetch(`/api/projects/${id}`, { method: 'DELETE' })));
+    fetchData();
+  };
+
+  const batchActions = [
+    { label: "Delete", icon: <Trash2 size={14} />, variant: "danger" as const, onClick: handleBatchDelete }
   ];
 
   return (
@@ -149,7 +154,7 @@ export default function ProjectPage() {
       {loading ? (
          <div className="card text-center text-gray-400 animate-pulse">Loading data...</div>
       ) : (
-         <DataTable data={data} columns={columns} searchKey="project_name" />
+         <DataTable data={data} columns={columns} searchKey="project_name" batchActions={batchActions} />
       )}
 
       <FormModal 
@@ -162,7 +167,7 @@ export default function ProjectPage() {
               <div className="space-y-2 col-span-2">
                 <label className="text-sm font-medium text-gray-300">CLIENTS</label>
                 <select 
-                  className="input !bg-[#111827]" 
+                  className="input !bg-[#0f1117]" 
                   value={formData.contract_id} 
                   onChange={ev => setFormData({...formData, contract_id: ev.target.value})}
                 >
@@ -240,17 +245,18 @@ export default function ProjectPage() {
             </div>
             
 
-          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#374151]">
+          <div className="col-span-2 flex justify-end gap-3 mt-6 pt-4 border-t border-[#2d2f3d]">
             <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">Cancel</button>
             <button type="submit" className="btn-primary">Save Changes</button>
           </div>
         </form>
       </FormModal>
 
-      <BatchUploadModal 
+      <EnhancedBatchUploadModal 
           isOpen={isBatchModalOpen}
           onClose={() => setIsBatchModalOpen(false)}
           entityName="Project"
+          entityType="projects"
           apiEndpoint="/api/projects"
           onSuccess={fetchData}
           expectedHeaders={['contract_id', 'project_name', 'po_no', 'itp_code', 'budget', 'focal_name', 'focal_email']}

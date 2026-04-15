@@ -1,30 +1,41 @@
+
 export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const clients = await prisma.clients_and_contracts.findMany({
-    include: { workflow_presets: true }
-  });
-  return NextResponse.json(clients, { 
-    headers: { 'Cache-Control': 'no-store, must-revalidate' }
-  });
+  try {
+    const data = await prisma.clients_and_contracts.findMany({ orderBy: { created_at: 'desc' } });
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
-  const body = await request.json();
-  if (body.contract_start_date) body.contract_start_date = new Date(body.contract_start_date);
-  if (body.contract_end_date) body.contract_end_date = new Date(body.contract_end_date);
-  const client = await prisma.clients_and_contracts.create({
-    data: {
-      client_name: body.client_name,
-      contract_no: body.contract_no,
-      currency: body.currency,
-      original_contract_value: Number(body.original_contract_value) || 0,
-      contract_start_date: body.contract_start_date || null,
-      contract_end_date: body.contract_end_date || null,
-      preset_id: body.preset_id,
-    }
-  });
-  return NextResponse.json(client);
+  try {
+    const body = await request.json();
+    Object.keys(body).forEach(k => {
+      if (['work_duration', 'ot_duration', 'mileage', 'expenses_amount', 'total_amount', 'credit_memo_amount', 'ses_value', 'original_contract_value', 'running_balance'].includes(k)) {
+        if(body[k]) body[k] = Number(body[k]);
+      }
+      if (k.includes('date') && body[k]) {
+        body[k] = new Date(body[k]);
+      }
+      if (typeof body[k] === 'string' && body[k].trim() === '') {
+        body[k] = null;
+      }
+      if (k === 'active_status' || k === 'ts_file_verified') {
+        if (typeof body[k] === 'string') body[k] = body[k].toLowerCase() === 'true';
+      }
+    });
+
+    const newData = await prisma.clients_and_contracts.create({
+      data: body
+    });
+    return NextResponse.json(newData, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Failed to create" }, { status: 500 });
+  }
 }
