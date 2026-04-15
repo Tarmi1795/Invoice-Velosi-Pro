@@ -78,7 +78,7 @@ export default function FinalInvoicePage() {
           .then(r => r.json())
           .then(d => setSesRecords(Array.isArray(d) ? d : [])),
         // Fetch workflow presets
-        fetch('/api/workflow-presets', { cache: 'no-store' })
+        fetch('/api/presets', { cache: 'no-store' })
           .then(r => r.json())
           .then(d => setWorkflowPresets(Array.isArray(d) ? d : []))
       ]);
