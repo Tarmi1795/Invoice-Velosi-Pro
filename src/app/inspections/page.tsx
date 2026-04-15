@@ -12,16 +12,18 @@ export default function InspectionPage() {
   const [data, setData] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [inspectors, setInspectors] = useState<any[]>([]);
+  const [itpPos, setItpPos] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [formError, setFormError] = useState("");
-  
+
   const initialForm = {
     visit_ref: "",
     project_name: "",
     employee_no: "",
+    itp_po_id: "",
     report_no: "",
     coordinator_name: "",
     vendor_location: "",
@@ -53,15 +55,15 @@ export default function InspectionPage() {
   const fetchRelationships = async () => {
     try {
       await Promise.all([
-        
-          fetch('/api/projects', { cache: 'no-store' }).then(r => r.json()).then(d => {
-            setProjects(Array.isArray(d) ? d : []);
-          })
-        ,
-          fetch('/api/inspectors', { cache: 'no-store' }).then(r => r.json()).then(d => {
-            setInspectors(Array.isArray(d) ? d : []);
-          })
-        
+        fetch('/api/projects', { cache: 'no-store' }).then(r => r.json()).then(d => {
+          setProjects(Array.isArray(d) ? d : []);
+        }),
+        fetch('/api/inspectors', { cache: 'no-store' }).then(r => r.json()).then(d => {
+          setInspectors(Array.isArray(d) ? d : []);
+        }),
+        fetch('/api/monitoring', { cache: 'no-store' }).then(r => r.json()).then(d => {
+          setItpPos(Array.isArray(d) ? d : []);
+        })
       ]);
     } catch(err) {
       console.error(err);
@@ -77,6 +79,7 @@ export default function InspectionPage() {
     visit_ref: "",
     project_name: "",
     employee_no: "",
+    itp_po_id: "",
     report_no: "",
     coordinator_name: "",
     vendor_location: "",
@@ -145,6 +148,7 @@ export default function InspectionPage() {
   const columns = [
     { key: "project_name", label: "PROJECT", render: (_: any, row: any) => row.projects?.project_name || 'N/A' },
     { key: "inspector_name", label: "INSPECTOR", render: (_: any, row: any) => row.inspectors?.full_name || 'N/A' },
+    { key: "itp_no", label: "ITP NO", render: (_: any, row: any) => row.itp_pos?.itp_po_number || 'N/A' },
     { key: "report_no", label: "REPORT NO" },
     { key: "coordinator_name", label: "COORDINATOR" },
     { key: "vendor_location", label: "VENDOR LOCATION" },
@@ -280,7 +284,21 @@ export default function InspectionPage() {
                   <p className="text-xs text-yellow-500 mt-1">No inspector assigned — inspection may not be billable</p>
                 )}
               </div>
-              
+
+              <div className="space-y-2 col-span-2">
+                <label className="text-sm font-medium text-gray-300">ITP/PO</label>
+                <select
+                  className="input !bg-[#0f1117]"
+                  value={formData.itp_po_id}
+                  onChange={ev => setFormData({...formData, itp_po_id: ev.target.value})}
+                >
+                  <option value="">Select ITP/PO...</option>
+                  {itpPos.map((opt: any) => (
+                    <option key={opt.id} value={opt.id}>{opt.itp_po_number} - {opt.project_name}</option>
+                  ))}
+                </select>
+              </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">REPORT NO</label>
               <input 
@@ -423,7 +441,7 @@ export default function InspectionPage() {
           entityType="inspections"
           apiEndpoint="/api/inspections"
           onSuccess={fetchData}
-          expectedHeaders={['visit_ref', 'project_name', 'employee_no', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
+          expectedHeaders={['visit_ref', 'project_name', 'employee_no', 'itp_po_id', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
       />
     </div>
   );

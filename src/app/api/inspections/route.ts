@@ -9,7 +9,8 @@ export async function GET() {
       orderBy: { created_at: 'desc' },
       include: {
         inspectors: { select: { full_name: true } },
-        projects: { select: { project_name: true } }
+        projects: { select: { project_name: true } },
+        itp_pos: { select: { itp_po_number: true } }
       }
     });
     return NextResponse.json(data);

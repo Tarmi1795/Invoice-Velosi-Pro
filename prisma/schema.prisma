@@ -91,6 +91,7 @@ model itp_pos {
   projects          projects? @relation(fields: [project_id], references: [id])
   inspectors        inspectors? @relation(fields: [inspector_id], references: [id])
   revisions         itp_revisions[]
+  inspections_summary inspections_summary[]
 
   @@index([project_id])
   @@index([inspector_id])
@@ -162,6 +163,7 @@ model inspections_summary {
   visit_ref              String                   @id
   project_name           String?
   employee_no            String?
+  itp_po_id              String?
   coordinator_name       String?
   vendor_location        String?
   inspection_start_date DateTime?
@@ -179,6 +181,7 @@ model inspections_summary {
   updated_at            DateTime?                @default(now())
   inspectors            inspectors?              @relation(fields: [employee_no], references: [employee_no])
   projects              projects?                @relation(fields: [project_name], references: [project_name])
+  itp_pos               itp_pos?                 @relation(fields: [itp_po_id], references: [id])
   proformas_and_invoices proformas_and_invoices[]
 
 
@@ -186,6 +189,7 @@ model inspections_summary {
 
   @@index([project_name])
   @@index([employee_no])
+  @@index([itp_po_id])
   @@index([report_no])
   @@index([inspection_start_date])
   @@index([coordinator_name])
