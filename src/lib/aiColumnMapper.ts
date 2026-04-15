@@ -30,7 +30,7 @@ const ENTITY_FIELDS: Record<string, string[]> = {
     "focal_email", "active_status"
   ],
   inspections: [
-    "project_name", "employee_no", "report_no", "coordinator_name", "vendor_location",
+    "visit_ref", "project_name", "employee_no", "itp_po_id", "report_no", "coordinator_name", "vendor_location",
     "inspection_start_date", "inspection_end_date", "work_duration", "ot_duration",
     "duration_tag", "travel_routing", "mileage", "expenses_amount", "ts_filename", "ts_file_verified"
   ],
@@ -43,11 +43,11 @@ const ENTITY_FIELDS: Record<string, string[]> = {
     "proforma_inv_id", "ses_no", "ses_date", "ses_value", "sap_work_order", "po_no", "itp_code", "status"
   ],
   inspectors: [
-    "full_name", "job_title", "base_location"
+    "employee_no", "full_name", "job_title", "base_location"
   ],
   itp_pos: [
-    "project_id", "inspector_id", "itp_po_number", "location", "expiry_date",
-    "designation", "rates", "original_budget", "total_invoiced", "status"
+    "project_id", "inspector_id", "itp_po_number", "po_no", "project_name", "inspector_name",
+    "location", "expiry_date", "designation", "rates", "original_budget", "total_invoiced", "status"
   ],
 };
 

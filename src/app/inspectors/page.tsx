@@ -17,6 +17,7 @@ export default function InspectorPage() {
   const [loading, setLoading] = useState(true);
   
   const initialForm = {
+    employee_no: "",
     full_name: "",
     job_title: "",
     base_location: ""
@@ -90,6 +91,7 @@ export default function InspectorPage() {
   };
 
   const columns = [
+    { key: "employee_no", label: "EMPLOYEE NO" },
     { key: "full_name", label: "FULL NAME" },
     { key: "job_title", label: "JOB TITLE" },
     { key: "base_location", label: "BASE LOCATION" },
@@ -155,7 +157,18 @@ export default function InspectorPage() {
         title={editingItem ? "Edit Inspector" : "New Inspector"}
       >
         <form onSubmit={handleSubmit} className="space-y-4 grid grid-cols-2 gap-4">
-          
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-300">EMPLOYEE NO</label>
+              <input
+                type="text"
+                step="any"
+                className="input"
+                value={formData.employee_no}
+                onChange={ev => setFormData({...formData, employee_no: ev.target.value})}
+              />
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">FULL NAME</label>
               <input 
@@ -204,7 +217,7 @@ export default function InspectorPage() {
           entityType="inspectors"
           apiEndpoint="/api/inspectors"
           onSuccess={fetchData}
-          expectedHeaders={['full_name', 'job_title', 'base_location']}
+          expectedHeaders={['employee_no', 'full_name', 'job_title', 'base_location']}
       />
     </div>
   );
