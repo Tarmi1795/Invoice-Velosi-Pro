@@ -41,11 +41,12 @@ export async function GET() {
       return {
         id: itp.id,
         itp_po_number: itp.itp_po_number,
+        po_no: itp.po_no || "N/A",
         contract_no: itp.projects?.clients_and_contracts?.contract_no || "N/A",
         client_name: itp.projects?.clients_and_contracts?.client_name || "Unknown",
         project_name: itp.projects?.project_name || "Unknown",
         location: itp.location,
-        inspector: itp.inspectors?.full_name || "Not Assigned",
+        inspector_name: itp.inspectors?.full_name || "Not Assigned",
         expiry_date: itp.expiry_date,
         designation: itp.designation,
         rates: itp.rates,

@@ -191,10 +191,11 @@ export default function MonitoringPage() {
 
   const itpColumns = [
     { key: "itp_po_number", label: "ITP/PO NO." },
+    { key: "po_no", label: "PO NO." },
     { key: "contract_no", label: "CONTRACT NO." },
     { key: "project_name", label: "PROJECT" },
     { key: "location", label: "LOCATION" },
-    { key: "inspector", label: "INSPECTOR" },
+    { key: "inspector_name", label: "INSPECTOR" },
     { key: "expiry_date", label: "EXPIRY", render: (val: any) => val ? new Date(val).toLocaleDateString() : "—" },
     { key: "budget", label: "BUDGET", render: (val: any) => `QAR ${Number(val || 0).toLocaleString()}` },
     { key: "status", label: "STATUS", render: (val: any) => <StatusBadge status={val} /> },
@@ -406,7 +407,7 @@ export default function MonitoringPage() {
         entityType={batchEntity}
         apiEndpoint={batchEntity === "itp_pos" ? "/api/monitoring" : `/api/${batchEntity}`}
         onSuccess={fetchAll}
-        expectedHeaders={batchEntity === "itp_pos" ? ["project_name", "itp_po_number", "po_no", "location", "inspector_name", "expiry_date", "designation", "rates", "budget"] : batchEntity === "po_records" ? ["po_no", "client_name", "project_name", "contract_no", "amount", "status"] : ["sr_so_no", "po_no", "client_name", "project_name", "amount", "status"]}
+        expectedHeaders={batchEntity === "itp_pos" ? ["itp_po_number", "po_no", "project_name", "location", "inspector_name", "expiry_date", "designation", "rates", "budget"] : batchEntity === "po_records" ? ["po_no", "client_name", "project_name", "contract_no", "amount", "status"] : ["sr_so_no", "po_no", "client_name", "project_name", "amount", "status"]}
       />
     </div>
   );
