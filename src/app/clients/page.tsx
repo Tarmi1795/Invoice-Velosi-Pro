@@ -101,6 +101,10 @@ export default function ClientPage() {
     { key: "client_name", label: "CLIENT NAME" },
     { key: "contract_no", label: "CONTRACT NO" },
     { key: "currency", label: "CURRENCY" },
+    { key: "original_contract_value", label: "CONTRACT VALUE" },
+    { key: "running_balance", label: "RUNNING BALANCE" },
+    { key: "contract_start_date", label: "START DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "contract_end_date", label: "END DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "preset_name", label: "WORKFLOW PRESET", render: (val: any) => val || <span className="text-gray-500">—</span> },
     {
       key: "actions",

@@ -144,9 +144,21 @@ export default function InspectionPage() {
   };
 
   const columns = [
+    { key: "project_name", label: "PROJECT", render: (_: any, row: any) => row.projects?.project_name || 'N/A' },
+    { key: "inspector_name", label: "INSPECTOR", render: (_: any, row: any) => row.inspectors?.full_name || 'N/A' },
     { key: "report_no", label: "REPORT NO" },
-    { key: "inspection_start_date", label: "INSPECTION START DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "coordinator_name", label: "COORDINATOR" },
     { key: "vendor_location", label: "VENDOR LOCATION" },
+    { key: "inspection_start_date", label: "START DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "inspection_end_date", label: "END DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "work_duration", label: "WORK DURATION" },
+    { key: "ot_duration", label: "OT DURATION" },
+    { key: "duration_tag", label: "DURATION TAG" },
+    { key: "travel_routing", label: "TRAVEL ROUTING" },
+    { key: "mileage", label: "MILEAGE" },
+    { key: "expenses_amount", label: "EXPENSES" },
+    { key: "ts_filename", label: "TS FILE" },
+    { key: "ts_file_verified", label: "TS VERIFIED", render: (val: any) => val ? "Yes" : "No" },
     {
       key: "actions",
       label: "Actions",

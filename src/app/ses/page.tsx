@@ -126,10 +126,12 @@ export default function SESRecordPage() {
 
   const columns = [
     { key: "ses_no", label: "SES NO" },
+    { key: "ses_date", label: "SES DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "itp_po_number", label: "ITP/PO NO", render: (val: any, row: any) => row.itp_pos?.itp_po_number || <span className="text-gray-500">—</span> },
     { key: "itp_project_name", label: "ITP PROJECT", render: (val: any, row: any) => row.itp_pos?.project_name || <span className="text-gray-500">—</span> },
     { key: "po_no", label: "PO NO" },
     { key: "itp_code", label: "ITP CODE" },
+    { key: "sap_work_order", label: "SAP WORK ORDER" },
     { key: "ses_value", label: "SES VALUE" },
     { key: "status", label: "STATUS" },
     {

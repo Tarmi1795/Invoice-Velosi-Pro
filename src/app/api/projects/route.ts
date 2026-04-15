@@ -5,7 +5,10 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    const data = await prisma.projects.findMany({ orderBy: { created_at: 'desc' } });
+    const data = await prisma.projects.findMany({
+      orderBy: { created_at: 'desc' },
+      include: { clients_and_contracts: { select: { client_name: true } } }
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });

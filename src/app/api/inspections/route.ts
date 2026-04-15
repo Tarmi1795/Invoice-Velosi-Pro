@@ -5,7 +5,13 @@ import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
-    const data = await prisma.inspections_summary.findMany({ orderBy: { created_at: 'desc' } });
+    const data = await prisma.inspections_summary.findMany({
+      orderBy: { created_at: 'desc' },
+      include: {
+        inspectors: { select: { full_name: true } },
+        projects: { select: { project_name: true } }
+      }
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch data" }, { status: 500 });

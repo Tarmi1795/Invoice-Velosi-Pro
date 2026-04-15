@@ -139,9 +139,17 @@ export default function InvoicePage() {
   };
 
   const columns = [
+    { key: "proforma_inv_no", label: "PROFORMA NO" },
+    { key: "proforma_inv_date", label: "PROFORMA DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
     { key: "invoice_no", label: "INVOICE NO" },
-    { key: "proforma_inv_no", label: "PROFORMA INV NO" },
+    { key: "invoice_date", label: "INVOICE DATE", render: (val: any) => val ? new Date(val).toLocaleDateString() : 'N/A' },
+    { key: "po_no", label: "PO NO" },
+    { key: "sr_so_no", label: "SR/SO NO" },
+    { key: "sap_sales_order", label: "SAP SALES ORDER" },
     { key: "total_amount", label: "TOTAL AMOUNT" },
+    { key: "conso_invoice_no", label: "CONSO INVOICE" },
+    { key: "credit_memo_no", label: "CREDIT MEMO NO" },
+    { key: "credit_memo_amount", label: "CREDIT AMOUNT" },
     { key: "payment_status", label: "PAYMENT STATUS" },
     {
       key: "actions",

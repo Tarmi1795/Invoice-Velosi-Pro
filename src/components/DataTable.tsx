@@ -158,7 +158,7 @@ export function DataTable({
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto w-full">
+      <div className="overflow-x-auto w-full table-scrollbar">
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-[#111827]/50 border-b border-[#374151]">

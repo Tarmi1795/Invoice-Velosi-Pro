@@ -98,9 +98,13 @@ export default function ProjectPage() {
   };
 
   const columns = [
+    { key: "client_name", label: "CLIENT", render: (_: any, row: any) => row.clients_and_contracts?.client_name || 'N/A' },
     { key: "project_name", label: "PROJECT NAME" },
     { key: "po_no", label: "PO NO" },
+    { key: "itp_code", label: "ITP CODE" },
     { key: "focal_name", label: "FOCAL NAME" },
+    { key: "focal_email", label: "FOCAL EMAIL" },
+    { key: "active_status", label: "ACTIVE", render: (val: any) => val ? "Yes" : "No" },
     {
       key: "actions",
       label: "Actions",
