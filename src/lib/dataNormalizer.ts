@@ -25,7 +25,7 @@ const STRING_FIELDS = new Set([
   // clients_and_contracts
   "client_name", "contract_no", "currency", "description", "preset_id",
   // itp_pos
-  "itp_po_number", "location", "designation",
+  "itp_po_number", "inspector_id", "inspector_name", "location", "designation",
   // inspectors
   "full_name", "job_title", "base_location",
   // po_records

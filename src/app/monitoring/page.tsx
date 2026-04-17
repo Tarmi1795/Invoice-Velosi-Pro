@@ -195,7 +195,7 @@ export default function MonitoringPage() {
     { key: "contract_no", label: "CONTRACT NO." },
     { key: "project_name", label: "PROJECT" },
     { key: "location", label: "LOCATION" },
-    { key: "inspector_name", label: "INSPECTOR" },
+    { key: "inspector_id", label: "INSPECTOR" },
     { key: "expiry_date", label: "EXPIRY", render: (val: any) => val ? new Date(val).toLocaleDateString() : "—" },
     { key: "budget", label: "BUDGET", render: (val: any) => `QAR ${Number(val || 0).toLocaleString()}` },
     { key: "status", label: "STATUS", render: (val: any) => <StatusBadge status={val} /> },
@@ -327,7 +327,7 @@ export default function MonitoringPage() {
             <div className="space-y-2"><label className="text-xs font-bold text-gray-400">Location</label><input className="input" value={location} onChange={e => setLocation(e.target.value)} placeholder="RLIC / Mesaieed" /></div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2"><label className="text-xs font-bold text-gray-400">Assigned Inspector</label><select className="input" value={inspectorId} onChange={e => setInspectorId(e.target.value)}><option value="">Select Inspector...</option>{inspectors.map(i => <option key={i.id} value={i.id}>{i.full_name}</option>)}</select></div>
+            <div className="space-y-2"><label className="text-xs font-bold text-gray-400">Assigned Inspector</label><select className="input" value={inspectorId} onChange={e => setInspectorId(e.target.value)}><option value="">Select Inspector...</option>{inspectors.map(i => <option key={i.id} value={i.employee_no}>{i.employee_no} — {i.full_name}</option>)}</select></div>
             <div className="space-y-2"><label className="text-xs font-bold text-gray-400">Expiry Date</label><input type="date" className="input" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} /></div>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -407,7 +407,7 @@ export default function MonitoringPage() {
         entityType={batchEntity}
         apiEndpoint={batchEntity === "itp_pos" ? "/api/monitoring" : `/api/${batchEntity}`}
         onSuccess={fetchAll}
-        expectedHeaders={batchEntity === "itp_pos" ? ["itp_po_number", "po_no", "project_name", "location", "inspector_name", "expiry_date", "designation", "rates", "budget"] : batchEntity === "po_records" ? ["po_no", "client_name", "project_name", "contract_no", "amount", "status"] : ["sr_so_no", "po_no", "client_name", "project_name", "amount", "status"]}
+        expectedHeaders={batchEntity === "itp_pos" ? ["itp_po_number", "po_no", "project_name", "location", "employee_no", "expiry_date", "designation", "rates", "budget"] : batchEntity === "po_records" ? ["po_no", "client_name", "project_name", "contract_no", "amount", "status"] : ["sr_so_no", "po_no", "client_name", "project_name", "amount", "status"]}
       />
     </div>
   );

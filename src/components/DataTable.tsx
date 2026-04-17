@@ -26,6 +26,7 @@ interface DataTableProps {
   onSelectionChange?: (ids: string[]) => void;
   batchActions?: BatchAction[];
   highlightedId?: string;
+  rowKey?: string;
 }
 
 export function DataTable({
@@ -37,7 +38,8 @@ export function DataTable({
   selectedIds = [],
   onSelectionChange,
   batchActions,
-  highlightedId: externalHighlightedId
+  highlightedId: externalHighlightedId,
+  rowKey: externalRowKey
 }: DataTableProps) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -50,6 +52,17 @@ export function DataTable({
   const highlightedId = externalHighlightedId ?? internalHighlighted;
 
   const safeData = Array.isArray(data) ? data : [];
+
+  // Robustly find a unique ID for each row if not provided
+  const getRowId = useCallback((row: any, index: number) => {
+    if (externalRowKey && row[externalRowKey]) return String(row[externalRowKey]);
+    if (row.id) return String(row.id);
+    if (row.visit_ref) return String(row.visit_ref);
+    if (row.contract_no) return String(row.contract_no);
+    if (row.conso_invoice_no) return String(row.conso_invoice_no);
+    if (row.invoice_no) return String(row.invoice_no);
+    return `row-${index}`;
+  }, [externalRowKey]);
   
   const activeSelection = selectedIds.length > 0 || onSelectionChange ? selectedIds : internalSelected;
   const setActiveSelection = onSelectionChange || setInternalSelected;
@@ -89,18 +102,23 @@ export function DataTable({
     }
   };
 
-  const allPageSelected = paginatedData.length > 0 && paginatedData.every(row => activeSelection.includes(row.id));
-  const somePageSelected = paginatedData.some(row => activeSelection.includes(row.id));
+  const getPageIds = useCallback(() => {
+    return paginatedData.map((row, i) => getRowId(row, (page - 1) * rowsPerPage + i));
+  }, [paginatedData, getRowId, page, rowsPerPage]);
+
+  const pageIds = getPageIds();
+  const allPageSelected = paginatedData.length > 0 && pageIds.every(id => activeSelection.includes(id));
+  const somePageSelected = pageIds.some(id => activeSelection.includes(id));
 
   const toggleSelectAll = useCallback(() => {
-    const pageIds = paginatedData.map(row => row.id);
+    const ids = getPageIds();
     if (allPageSelected) {
-      setActiveSelection(activeSelection.filter(id => !pageIds.includes(id)));
+      setActiveSelection(activeSelection.filter(id => !ids.includes(id)));
     } else {
-      const newSelection = [...new Set([...activeSelection, ...pageIds])];
+      const newSelection = [...new Set([...activeSelection, ...ids])];
       setActiveSelection(newSelection);
     }
-  }, [allPageSelected, paginatedData, activeSelection, setActiveSelection]);
+  }, [allPageSelected, getPageIds, activeSelection, setActiveSelection]);
 
   const toggleSelectRow = useCallback((id: string) => {
     if (activeSelection.includes(id)) {
@@ -116,11 +134,12 @@ export function DataTable({
     return <Square size={16} className="text-gray-500" />;
   };
 
-  const handleRowClick = (row: any) => {
+  const handleRowClick = (row: any, index: number) => {
+    const id = getRowId(row, index);
     if (selectable) {
-      toggleSelectRow(row.id);
+      toggleSelectRow(id);
     }
-    setInternalHighlighted(row.id);
+    setInternalHighlighted(id);
     if (onRowClick) onRowClick(row);
   };
 
@@ -255,20 +274,22 @@ export function DataTable({
               </tr>
             ) : (
               paginatedData.map((row, i) => {
-                const isSelected = activeSelection.includes(row.id);
-                const isHighlighted = highlightedId === row.id;
+                const actualIndex = (page - 1) * rowsPerPage + i;
+                const rowId = getRowId(row, actualIndex);
+                const isSelected = activeSelection.includes(rowId);
+                const isHighlighted = highlightedId === rowId;
                 return (
                   <tr 
-                    key={row.id || i} 
+                    key={rowId} 
                     className={`transition-colors ${isHighlighted ? 'bg-orange-500/10' : isSelected ? 'bg-orange-500/5' : 'hover:bg-[#374151]/30'}`}
-                    onClick={() => handleRowClick(row)}
+                    onClick={() => handleRowClick(row, actualIndex)}
                   >
                     {selectable && (
                       <td className="px-4 py-3 w-12" onClick={(e) => e.stopPropagation()}>
                         <input 
                           type="checkbox" 
                           checked={isSelected}
-                          onChange={() => toggleSelectRow(row.id)}
+                          onChange={() => toggleSelectRow(rowId)}
                           className="w-4 h-4 rounded border-gray-500 text-orange-500 focus:ring-orange-500 bg-[#111827]"
                         />
                       </td>

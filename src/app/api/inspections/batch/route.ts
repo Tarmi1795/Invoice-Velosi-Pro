@@ -37,6 +37,24 @@ export async function POST(request: Request) {
           booleanFields: ["ts_file_verified"],
         }) as any;
 
+        // Resolve itp_po_number to itp_po_id if provided
+        let itpPoId = data.itp_po_id;
+        const itpPoNum = data.itp_po_number;
+        if (!itpPoId && itpPoNum) {
+           const pLine = await prisma.itp_pos.findFirst({ where: { itp_po_number: String(itpPoNum) } });
+           if (pLine) itpPoId = pLine.id;
+        }
+
+        if (itpPoId) data.itp_po_id = itpPoId;
+        delete data.itp_po_number; // Must remove string field so Prisma db insertion doesn't crash
+
+        // Ensure string fields are actually strings (Excel sometimes parses numbers as ints)
+        ['visit_ref', 'report_no', 'employee_no'].forEach(f => {
+          if (data[f] !== undefined && data[f] !== null) {
+            data[f] = String(data[f]);
+          }
+        });
+
         await prisma.inspections_summary.create({ data });
         success++;
       } catch (e) {

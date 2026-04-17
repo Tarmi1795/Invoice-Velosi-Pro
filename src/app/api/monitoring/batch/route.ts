@@ -25,22 +25,60 @@ export async function POST(request: Request) {
           projectId = p?.id;
         }
 
-        let inspectorId = item.inspector_id;
-        if (!inspectorId && item.inspector_name) {
-          const insp = await prisma.inspectors.findFirst({ where: { full_name: item.inspector_name } });
-          inspectorId = insp?.id;
-        }
+        let inspectorId = item.employee_no || item.inspector_id;
 
-        if (!projectId) {
-          failed++;
-          errors.push(`Row ${i + 1}: No project found matching "${item.project_name}" — ITP/PO must be linked to an existing Project`);
-          continue;
+        // Detect if the mapper incorrectly placed a name (letters/spaces) into inspector_id
+        // instead of an actual employee_no. Employee nos typically contain numbers.
+        const looksLikeName = typeof inspectorId === 'string' && /^[A-Za-z\s\.\/]+$/.test(inspectorId);
+        const searchName = looksLikeName ? inspectorId : item.inspector_name;
+        if (searchName) {
+          inspectorId = null; // default to null if no match found
+
+          // Try multiple matching strategies
+          const strategies = [
+            // 1. Exact uppercase contains (catches "LIANG DUJING" → "LIANG DUJING")
+            () => prisma.inspectors.findFirst({ where: { full_name: { contains: searchName.toUpperCase() } } }),
+            // 2. Exact lowercase contains (catches mixed case)
+            () => prisma.inspectors.findFirst({ where: { full_name: { contains: searchName.toLowerCase() } } }),
+            // 3. Strip "Mr."/"Ms." title and search core last name
+            () => {
+              const core = searchName.replace(/^(mr|ms|mrs)\.\s+/i, "").trim();
+              if (core !== searchName) {
+                return prisma.inspectors.findFirst({ where: { full_name: { contains: core } } });
+              }
+              return null;
+            },
+            // 4. Try last-name-only match (for "Firstname Lastname" vs "Lastname")
+            () => {
+              const parts = searchName.split(/\s+/);
+              const lastName = parts[parts.length - 1].replace(/[^a-zA-Z]/g, "");
+              if (lastName.length > 3) {
+                return prisma.inspectors.findFirst({ where: { full_name: { contains: lastName } } });
+              }
+              return null;
+            },
+            // 5. Exact match as fallback
+            () => prisma.inspectors.findFirst({ where: { full_name: { equals: searchName } } }),
+          ];
+
+          for (const strategy of strategies) {
+            const insp = await strategy();
+            if (insp?.employee_no) {
+              inspectorId = insp.employee_no;
+              break;
+            }
+          }
         }
 
         const data = normalizeRowWithOptions(item, {
           numberFields: ["rates", "original_budget"],
           dateFields: ["expiry_date"],
         }) as any;
+
+        // Strip fields that aren't part of itp_pos model but may come from Excel/normalized data
+        delete data.project_name;
+        delete data.inspector_name;
+        delete data.employee_no;
 
         await prisma.itp_pos.create({
           data: {

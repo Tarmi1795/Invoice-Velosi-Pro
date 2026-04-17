@@ -89,7 +89,7 @@ model itp_pos {
   created_at        DateTime? @default(now())
   updated_at        DateTime? @default(now())
   projects          projects? @relation(fields: [project_id], references: [id])
-  inspectors        inspectors? @relation(fields: [inspector_id], references: [id])
+  inspectors        inspectors? @relation(fields: [inspector_id], references: [employee_no])
   revisions         itp_revisions[]
   inspections_summary inspections_summary[]
 

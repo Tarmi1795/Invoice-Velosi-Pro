@@ -46,6 +46,7 @@ export async function GET() {
         client_name: itp.projects?.clients_and_contracts?.client_name || "Unknown",
         project_name: itp.projects?.project_name || "Unknown",
         location: itp.location,
+        inspector_id: itp.inspector_id,
         inspector_name: itp.inspectors?.full_name || "Not Assigned",
         expiry_date: itp.expiry_date,
         designation: itp.designation,

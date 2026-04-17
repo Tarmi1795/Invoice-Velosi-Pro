@@ -30,7 +30,7 @@ const ENTITY_FIELDS: Record<string, string[]> = {
     "focal_email", "active_status"
   ],
   inspections: [
-    "visit_ref", "project_name", "employee_no", "itp_po_id", "report_no", "coordinator_name", "vendor_location",
+    "visit_ref", "project_name", "employee_no", "itp_po_number", "report_no", "coordinator_name", "vendor_location",
     "inspection_start_date", "inspection_end_date", "work_duration", "ot_duration",
     "duration_tag", "travel_routing", "mileage", "expenses_amount", "ts_filename", "ts_file_verified"
   ],
@@ -46,7 +46,7 @@ const ENTITY_FIELDS: Record<string, string[]> = {
     "employee_no", "full_name", "job_title", "base_location"
   ],
   itp_pos: [
-    "project_id", "inspector_id", "itp_po_number", "po_no", "project_name", "inspector_name",
+    "project_id", "employee_no", "itp_po_number", "po_no", "project_name", "inspector_name",
     "location", "expiry_date", "designation", "rates", "original_budget", "total_invoiced", "status"
   ],
 };
@@ -112,6 +112,10 @@ const RULES_MAPPINGS: Record<string, { field: string; patterns: string[] }> = {
     field: "itp_code",
     patterns: ["itp.*code", "itp", "inspection.*test.*plan"]
   },
+  itp_po_number: {
+    field: "itp_po_number",
+    patterns: ["itp.*po.*number", "itp.*po.*no", "itp.*number", "itp.*no", "po.*number", "itp_po_id"]
+  },
   report_no: {
     field: "report_no",
     patterns: ["report.*no", "report.*#", "report.*number", "inspection.*report"]
@@ -124,9 +128,13 @@ const RULES_MAPPINGS: Record<string, { field: string; patterns: string[] }> = {
     field: "vendor_location",
     patterns: ["vendor.*location", "vendor", "location", "site", "venue"]
   },
-  inspector_id: {
-    field: "inspector_id",
-    patterns: ["inspector.*id", "inspector"]
+  inspector_name: {
+    field: "inspector_name",
+    patterns: ["inspector.*name", "inspector_name"]
+  },
+  employee_no: {
+    field: "employee_no",
+    patterns: ["inspector[_ ]?(id|no|number|employee[_ ]?no)", "inspector_id", "inspector_no", "inspector_employee_no", "employee_no"]
   },
   project_id: {
     field: "project_id",

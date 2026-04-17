@@ -146,6 +146,7 @@ export default function InspectionPage() {
   };
 
   const columns = [
+    { key: "visit_ref", label: "VISIT REF" },
     { key: "project_name", label: "PROJECT", render: (_: any, row: any) => row.projects?.project_name || 'N/A' },
     { key: "inspector_name", label: "INSPECTOR", render: (_: any, row: any) => row.inspectors?.full_name || 'N/A' },
     { key: "itp_no", label: "ITP NO", render: (_: any, row: any) => row.itp_pos?.itp_po_number || 'N/A' },
@@ -227,7 +228,7 @@ export default function InspectionPage() {
       {loading ? (
          <div className="card text-center text-gray-400 animate-pulse">Loading data...</div>
       ) : (
-         <DataTable data={data} columns={columns} searchKey="report_no" batchActions={batchActions} />
+         <DataTable data={data} columns={columns} searchKey="report_no" batchActions={batchActions} rowKey="visit_ref" />
       )}
 
       <FormModal 
@@ -441,7 +442,7 @@ export default function InspectionPage() {
           entityType="inspections"
           apiEndpoint="/api/inspections"
           onSuccess={fetchData}
-          expectedHeaders={['visit_ref', 'project_name', 'employee_no', 'itp_po_id', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
+          expectedHeaders={['visit_ref', 'project_name', 'employee_no', 'itp_po_number', 'report_no', 'coordinator_name', 'vendor_location', 'inspection_start_date', 'inspection_end_date', 'work_duration', 'ot_duration', 'travel_routing', 'mileage', 'expenses_amount', 'ts_filename', 'ts_file_verified']}
       />
     </div>
   );

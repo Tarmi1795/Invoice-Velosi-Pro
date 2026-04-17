@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import { UploadCloud, CheckCircle2, AlertTriangle, X, Download, Brain } from "lucide-react";
 import { downloadTemplate } from "@/lib/templateGenerator";
 import { MappingReviewModal } from "./MappingReviewModal";
+import { DataValidationModal, ValidationIssue } from "./DataValidationModal";
 
 interface ColumnMapping {
   excelHeader: string;
@@ -42,6 +43,9 @@ export function EnhancedBatchUploadModal({
   const [errorCount, setErrorCount] = useState<number | null>(null);
   const [rowsCount, setRowsCount] = useState<number | null>(null);
   const [showMappingReview, setShowMappingReview] = useState(false);
+  const [showValidationReview, setShowValidationReview] = useState(false);
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
+  const [transformedUploadData, setTransformedUploadData] = useState<any[]>([]);
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [availableFields, setAvailableFields] = useState<string[]>([]);
@@ -203,12 +207,56 @@ export function EnhancedBatchUploadModal({
         });
         return newRow;
       }).filter(row => Object.keys(row).length > 0);
+      
+      setTransformedUploadData(transformedRows);
 
+      // Call the validation API
+      setUploading(true);
+      const validateRes = await fetch("/api/batch-validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entityType, rows: transformedRows }),
+      });
+
+      if (validateRes.ok) {
+        const valData = await validateRes.json();
+        if (valData.issues && valData.issues.length > 0) {
+           setValidationIssues(valData.issues);
+           setShowValidationReview(true);
+           setUploading(false);
+           return; // Stop here, wait for validation modal
+        }
+      } else {
+        console.warn("Validation API failed, proceeding anyway.");
+      }
+      
+      // If no issues or validation failed, proceed directly
+      await executeFinalUpload(transformedRows);
+
+    } catch (err) {
+      handleUploadError(err);
+    }
+  };
+
+  const handleUploadError = (err: unknown) => {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setSuccessCount(0);
+      setErrorCount(rowsCount || 1);
+      setErrorSummary("Upload request failed: " + msg);
+      setErrorDetails([{ row: 0, reason: msg }]);
+      setShowErrorDetails(true);
+      setUploading(false);
+  };
+
+  const executeFinalUpload = async (rowsToUpload: any[]) => {
+    setUploading(true);
+    try {
       const batchEndpoint = apiEndpoint + "/batch";
       const res = await fetch(batchEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: transformedRows }),
+        body: JSON.stringify({ rows: rowsToUpload }),
       });
 
       const result = await res.json();
@@ -233,17 +281,31 @@ export function EnhancedBatchUploadModal({
       }
       onSuccess();
     } catch (err) {
-      console.error(err);
-      const msg = err instanceof Error ? err.message : String(err);
-      setSuccessCount(0);
-      setErrorCount(rowsCount || 1);
-      setErrorSummary("Upload request failed: " + msg);
-      setErrorDetails([{ row: 0, reason: msg }]);
-      setShowErrorDetails(true);
-      setUploading(false);
+      handleUploadError(err);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleValidationConfirm = (approvedIssues: ValidationIssue[]) => {
+    setShowValidationReview(false);
+    
+    // Apply fixes
+    const updatedRows = [...transformedUploadData];
+    for (const issue of approvedIssues) {
+       // Row is 1-indexed in issues
+       const rowIndex = issue.row - 1;
+       if (updatedRows[rowIndex] && issue.suggestedValue) {
+           updatedRows[rowIndex][issue.field] = issue.suggestedValue;
+       }
+    }
+    
+    executeFinalUpload(updatedRows);
+  };
+
+  const handleValidationProceedAnyway = () => {
+    setShowValidationReview(false);
+    executeFinalUpload(transformedUploadData);
   };
 
   const resetState = () => {
@@ -260,6 +322,8 @@ export function EnhancedBatchUploadModal({
     setShowErrorDetails(false);
     setErrorDetails([]);
     setErrorSummary("");
+    setValidationIssues([]);
+    setShowValidationReview(false);
     onClose();
   };
 
@@ -429,6 +493,16 @@ export function EnhancedBatchUploadModal({
           availableFields={availableFields}
           entityName={entityName}
           onConfirm={handleMappingConfirm}
+        />
+      )}
+
+      {showValidationReview && (
+        <DataValidationModal
+          isOpen={showValidationReview}
+          onClose={() => setShowValidationReview(false)}
+          issues={validationIssues}
+          onConfirm={handleValidationConfirm}
+          onProceedAnyway={handleValidationProceedAnyway}
         />
       )}
     </>
